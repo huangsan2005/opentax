@@ -1,0 +1,64 @@
+# 中国个人所得税规则集
+meta:
+  jurisdiction: cn
+  category: 个人所得税
+
+tables:
+  # ---- 综合所得年度税率表（7级超额累进）--------------------------
+  - id: cn/iit/comprehensive_annual
+    primitive: progressive
+    description: 个税综合所得年度汇算（应纳税所得额口径，已减除6万基本减除等）
+    effective: ["2019-01-01", null]
+    source:
+      title: 中华人民共和国个人所得税法（2018年修正）税率表一
+      doc_no: 中华人民共和国主席令第九号
+      url: https://www.gov.cn/xinwen/2018-08/31/content_5318578.htm
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [amount]
+    notes:
+      - 适用年度汇算；速算扣除数依据国家税务总局公告2018年第61号的官方口径。
+      - 引擎内置切片法与速算法双路径互验，数据改错会直接报错。
+
+    params:
+      brackets:
+        - {max_amount: "36000",   rate: "0.03", quick_deduct: "0"}
+        - {max_amount: "144000",  rate: "0.10", quick_deduct: "2520"}
+        - {max_amount: "300000",  rate: "0.20", quick_deduct: "16920"}
+        - {max_amount: "420000",  rate: "0.25", quick_deduct: "31920"}
+        - {max_amount: "660000",  rate: "0.30", quick_deduct: "52920"}
+        - {max_amount: "960000",  rate: "0.35", quick_deduct: "85920"}
+        - {                       rate: "0.45", quick_deduct: "181920"}
+
+  # ---- 经营所得税率表（5级超额累进）------------------------------
+  - id: cn/iit/business_income
+    primitive: progressive
+    description: 个税经营所得（个体户/承包承租经营，应纳税所得额口径）
+    effective: ["2019-01-01", null]
+    source:
+      title: 中华人民共和国个人所得税法（2018年修正）税率表二
+      doc_no: 中华人民共和国主席令第九号
+      url: https://www.gov.cn/xinwen/2018-08/31/content_5318578.htm
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [amount]
+    params:
+      brackets:
+        - {max_amount: "30000",   rate: "0.05", quick_deduct: "0"}
+        - {max_amount: "90000",   rate: "0.10", quick_deduct: "1500"}
+        - {max_amount: "300000",  rate: "0.20", quick_deduct: "10500"}
+        - {max_amount: "500000",  rate: "0.30", quick_deduct: "40500"}
+        - {                       rate: "0.35", quick_deduct: "65500"}
+
+  # ---- 利息股息红利所得 -----------------------------------------
+  - id: cn/iit/dividend
+    primitive: flat
+    description: 个税·利息股息红利所得 20%
+    effective: ["2019-01-01", null]
+    source:
+      title: 中华人民共和国个人所得税法 第三条
+      doc_no: 中华人民共和国主席令第九号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.20"}

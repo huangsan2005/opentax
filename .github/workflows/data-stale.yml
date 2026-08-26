@@ -1,0 +1,34 @@
+name: data-stale
+
+# 每周扫描：限期政策到期前 60 天自动开 Issue 提醒社区核实是否延续。
+# 这是"版本漂移"问题的工程化防线：过期数据宁可下架也不静默使用。
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"   # 每周一 UTC 3 点
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml
+      - name: Scan expiring policies
+        id: scan
+        run: python scripts/check_stale.py >> "$GITHUB_OUTPUT"
+      - name: Open reminder issue if needed
+        if: steps.scan.outputs.expiring != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '限期政策到期提醒（需核验是否延续）',
+              body: `${{ steps.scan.outputs.expiring }}`,
+              labels: ['data-stale']
+            })

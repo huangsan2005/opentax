@@ -1,0 +1,51 @@
+# 中国增值税：小规模纳税人征收率（多版本共存示例）
+# 同一规则的多个时间版本放在同文件不同条目：
+#   - 无政策优惠时命中基础版（priority 0）
+#   - 处于减征窗口时优先命中高 priority 版本
+#   - 窗口外交易日期自动回落或拒答，绝不硬算
+meta:
+  jurisdiction: cn
+  category: 增值税
+
+tables:
+  - id: cn/vat/small_goods
+    primitive: flat
+    description: 小规模纳税人增值税征收率 3%（销售货物/劳务/服务基准版）
+    effective: ["2016-05-01", null]
+    priority: 0
+    source:
+      title: 营业税改征增值税试点有关事项的规定
+      doc_no: 财税〔2016〕36号附件2
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.03"}
+
+  - id: cn/vat/small_goods
+    primitive: flat
+    description: 小规模纳税人3%征收率减按1%（阶段性减征窗口）
+    effective: ["2023-01-01", "2027-12-31"]
+    priority: 10
+    source:
+      title: 关于增值税小规模纳税人减免增值税政策的公告
+      doc_no: 财政部 税务总局公告2023年第19号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - 该政策为限期政策，2027-12-31 到期后自动回落至3%基准版。
+      - 价税分离请配合管线 price_split 计算税款 = 含税额÷(1+率)×率。
+    params: {rate: "0.01"}
+
+  - id: cn/vat/small_realestate
+    primitive: flat
+    description: 小规模纳税人销售不动产 征收率 5%（不参与减按1%）
+    effective: ["2016-05-01", null]
+    priority: 0
+    source:
+      title: 营业税改征增值税试点有关事项的规定 第五条
+      doc_no: 财税〔2016〕36号附件2
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.05"}

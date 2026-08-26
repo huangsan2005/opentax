@@ -1,0 +1,34 @@
+# 中国增值税：小规模纳税人按季/按月免征（多版本）
+meta:
+  jurisdiction: cn
+  category: 增值税
+
+tables:
+  - id: cn/vat/small_cycle_exempt
+    primitive: threshold_exempt
+    description: 小规模纳税人季度销售额≤30万免征，超过全额计税（基准3%版）
+    effective: ["2019-01-01", "2022-12-31"]
+    priority: 0
+    source:
+      title: 关于实施小微企业普惠性税收减免政策的通知 第一条
+      doc_no: 财税〔2019〕13号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - 按月申报为月10万口径；本表统一按季30万建模。
+      - 超线的那个周期全额计税，不是只对超额部分。
+    params: {threshold: "300000", rate: "0.03"}
+
+  - id: cn/vat/small_cycle_exempt
+    primitive: threshold_exempt
+    description: 季度≤30万免征+减按1%（阶段叠加窗口版）
+    effective: ["2023-01-01", "2027-12-31"]
+    priority: 10
+    source:
+      title: 关于增值税小规模纳税人减免增值税政策的公告 第一条、第二条
+      doc_no: 财政部 税务总局公告2023年第19号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {threshold: "300000", rate: "0.01"}

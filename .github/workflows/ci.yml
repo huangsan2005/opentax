@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  golden-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install pyyaml
+      - name: Golden regression
+        run: python run_tests.py
+
+  data-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml
+      - name: Load every rule file (validation is load-time)
+        run: |
+          python - <<'EOF'
+          from open_tax.engine.loader import load_all
+          reg = load_all("data/rules")
+          total = sum(len(v) for v in reg.values())
+          print(f"OK: {len(reg)} rules / {total} versions loaded")
+          assert total >= 10, "规则数量异常，疑似数据文件丢失"
+          EOF

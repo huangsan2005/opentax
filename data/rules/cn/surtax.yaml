@@ -1,0 +1,80 @@
+# 城市维护建设税与教育费附加（附加税费族）
+# 城建税税率因纳税人所在地而异，拆成三条 id 由管线/LLM按场景选择。
+meta:
+  jurisdiction: cn
+  category: 附加税费
+
+tables:
+  - id: cn/surtax/urban_7pct
+    primitive: flat
+    description: 城市维护建设税·市区 7%（计税基础=实缴增值税+消费税）
+    effective: ["2021-09-01", null]
+    source:
+      title: 中华人民共和国城市维护建设税法 第四条第一项
+      doc_no: 中华人民共和国主席令第五十一号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.07"}
+
+  - id: cn/surtax/county_5pct
+    primitive: flat
+    description: 城市维护建设税·县城/镇 5%
+    effective: ["2021-09-01", null]
+    source:
+      title: 中华人民共和国城市维护建设税法 第四条第二项
+      doc_no: 中华人民共和国主席令第五十一号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.05"}
+
+  - id: cn/surtax/township_1pct
+    primitive: flat
+    description: 城市维护建设税·其他地区 1%
+    effective: ["2021-09-01", null]
+    source:
+      title: 中华人民共和国城市维护建设税法 第四条第三项
+      doc_no: 中华人民共和国主席令第五十一号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.01"}
+
+  - id: cn/surtax/edu_surcharge_3pct
+    primitive: flat
+    description: 教育费附加 3%（计税基础=实缴增值税+消费税）
+    effective: ["1986-07-01", null]
+    source:
+      title: 征收教育费附加的暂行规定
+      doc_no: 国发〔1986〕50号（后经国务院令第588号修订）
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.03"}
+
+  - id: cn/surtax/local_edu_2pct
+    primitive: flat
+    description: 地方教育附加 2%（通行标准，具体依各省实施办法）
+    effective: ["2010-01-01", null]
+    source:
+      title: 教育法第五十七条授权 + 各省地方教育附加征收使用管理办法
+      doc_no: 以各省文件为准（待社区补全省份版本）
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - 起征条件与减半优惠见 财政部 税务总局公告2023年第12号（六税两费）。
+    params: {rate: "0.02"}
+
+  - id: cn/stamp/construction_contract
+    primitive: flat
+    description: 印花税·建设工程合同 万分之三
+    effective: ["2022-07-01", null]
+    source:
+      title: 中华人民共和国印花税法 所附税目税率表
+      doc_no: 中华人民共和国主席令第八十九号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.0003"}

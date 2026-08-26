@@ -1,0 +1,39 @@
+# 中国企业所得税：小型微利企业优惠（断崖式结构）
+meta:
+  jurisdiction: cn
+  category: 企业所得税
+
+tables:
+  - id: cn/cit/small_low_profit
+    primitive: tiered_cliff
+    description: 小型微利企业应纳税所得额≤300万实际税负5%，超过全额回归25%
+    effective: ["2023-01-01", "2027-12-31"]
+    priority: 10
+    source:
+      title: 关于进一步支持小微企业和个体工商户发展有关税费政策的公告
+      doc_no: 财政部 税务总局公告2023年第12号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - 结构是断崖非累进：超过300万的当年，全部应纳税所得额回归25%标准税率。
+      - 2027-12-31 到期前需关注政策延续情况。
+      - 本表仅对应纳税所得额≤300万的小型微利情形整体适用（从业人数/资产总额另判）。
+
+    params:
+      low_max: "3000000"
+      low_rate: "0.05"     # 25%法定 x 减按25%计入 = 实际5%
+      high_rate: "0.25"
+
+  - id: cn/cit/base_rate
+    primitive: flat
+    description: 企业所得税法定税率 25%
+    effective: ["2008-01-01", null]
+    priority: 0
+    source:
+      title: 中华人民共和国企业所得税法 第四条
+      doc_no: 中华人民共和国主席令第六十三号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.25"}

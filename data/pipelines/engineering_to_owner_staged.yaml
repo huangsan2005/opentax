@@ -1,0 +1,101 @@
+# 管线：工程款 -> 老板到手（开票节奏模型·按季申报口径）
+# 变量：
+#   contract_gross 含税合同额   cost_expense 成本费用合计
+#   n_periods 开票所跨的季度数（1=全部集中单季开完；4=四季均匀）
+# 现金口径（与快照版一致）：
+#   可分配现金 = 合同额 − 增值税 − 附加 − 成本 − 企税，
+#   全额视同股息缴20%后为"到手"。
+# 教学要点（引擎输出自动呈现）：
+#   - 增值税看"单个计税周期"是否超30万 -> 开票节奏直接影响；
+#   - 企业所得税看"全年"应纳税所得额 -> 分期节不了企税，勿信谣传；
+#   - 免掉的增值税留存在可分配现金中，最终按20%分出（对比行可见）。
+id: engineering_to_owner_staged
+title: 工程款到老板手（开票节奏×季度免征线模型）
+steps:
+  - as: n_periods
+    op: param_or_input             # 枚举器注入或默认四季均匀
+    key: n_periods
+    default: "4"
+    desc: 开票所跨季度数
+
+  # ---- 增值税（计税周期维度）-----------------------------------
+  - as: levy_rate
+    op: param
+    rule: cn/vat/small_goods       # 减按1%窗口内解析出 0.01
+    param: rate
+    desc: 小规模纳税人现行征收率
+
+  - as: cycle_taxable
+    op: expr
+    desc: 单季不含税销售额 = 合同额÷期数÷(1+征收率)
+    expr: contract_gross / n_periods / (1 + levy_rate)
+
+  - as: vat_one_cycle
+    op: rule                       # 断崖判定在规则里：≤30万整季免税
+    rule: cn/vat/small_cycle_exempt
+    args: {base: cycle_taxable}
+    desc: 单季增值税（≤30万免征 / 超线全额）
+
+  - as: vat_total
+    op: expr
+    desc: 增值税合计 = 单季 × 期数
+    expr: vat_one_cycle * n_periods
+
+  # ---- 附加税费 ------------------------------------------------
+  - as: urban_tax
+    op: rule
+    rule: cn/surtax/urban_7pct
+    args: {base: vat_total}
+    desc: 城建税合计（7%，随增值税走：免征即零）
+
+  - as: edu_sur
+    op: rule
+    rule: cn/surtax/edu_surcharge_3pct
+    args: {base: vat_total}
+    desc: 教育费附加合计（3%）
+
+  - as: local_edu
+    op: rule
+    rule: cn/surtax/local_edu_2pct
+    args: {base: vat_total}
+    desc: 地方教育附加合计（2%）
+
+  - as: surcharge_total
+    op: expr
+    desc: 税金及附加合计
+    expr: urban_tax + edu_sur + local_edu
+
+  # ---- 企业所得税（年度口径！与开票节奏无关）---------------------
+  - as: vat_excl_revenue
+    op: expr
+    desc: 全年不含税收入
+    expr: contract_gross / (1 + levy_rate)
+
+  - as: cit_taxable
+    op: expr
+    desc: 全年应纳税所得额 = 不含税收入 − 成本 − 税金及附加
+    expr: vat_excl_revenue - cost_expense - surcharge_total
+
+  - as: cit_total
+    op: rule
+    rule: cn/cit/small_low_profit
+    args: {base: cit_taxable}
+    desc: 企税合计（小微断崖看全年，分期无效）
+
+  # ---- 现金流与分红 --------------------------------------------
+  - as: distributable
+    op: expr
+    desc: 可分配现金 = 合同额 − 增值税 − 附加 − 成本 − 企税
+    expr: contract_gross - vat_total - surcharge_total - cost_expense - cit_total
+
+  - as: dividend_tax
+    op: rule
+    rule: cn/iit/dividend
+    args: {base: distributable}
+    desc: 股息红利个税20%
+
+  - as: owner_net
+    op: expr
+    result: true
+    desc: 到手合计 = 可分配现金 − 分红个税
+    expr: distributable - dividend_tax

@@ -1,0 +1,26 @@
+# 中国土地增值税：四级超率累进
+meta:
+  jurisdiction: cn
+  category: 土地增值税
+
+tables:
+  - id: cn/lvat/four_bracket
+    primitive: super_progressive
+    description: 土地增值税四级超率累进（增值率=增值额÷扣除项目金额）
+    effective: ["1994-01-01", null]
+    source:
+      title: 中华人民共和国土地增值税暂行条例 第七条
+      doc_no: 国务院令第138号
+    last_verified: "2026-08-27"
+    verified_by: null
+    inputs: [amount, base]
+    notes:
+      - 公式：应纳税额 = 增值额×税率 − 扣除项目金额×速算扣除系数。
+      - 扣除项目为0时增值率视同无穷大，落最高档（参考T20000填报口径）。
+      - 各地预征率、保交楼等阶段性免征政策不在本表（不符合长期稳定门槛），单列补充包。
+    params:
+      brackets:
+        - {max_ratio: "0.5",  rate: "0.30", quick_deduct_pct: "0"}
+        - {min_ratio: "0.5",  max_ratio: "1", rate: "0.40", quick_deduct_pct: "0.05"}
+        - {min_ratio: "1",    max_ratio: "2", rate: "0.50", quick_deduct_pct: "0.15"}
+        - {min_ratio: "2",                          rate: "0.60", quick_deduct_pct: "0.35"}

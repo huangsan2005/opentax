@@ -1,0 +1,82 @@
+# 管线：工程款（含税合同额）-> 老板到手，单期快照
+# 适用：小规模纳税人施工企业、查账征收、市区办公。
+# 口径（重要）：
+#   - contract_gross 含税合同额；cost_expense 成本费用合计（用户提供）。
+#   - 企业所得税按账面口径：不含税收入 − 成本 − 税金及附加。
+#   - 分红按"期末全额清仓"教学假设：可分配现金全额视同股息，
+#     缴20%后即"到手"；免征增值税多出的现金因此在表中可见
+#     （体现在 distributable 与账面利润之差）。
+#   - 全部税率运行期从规则库按交易日期解析，本文件无硬编码税率。
+id: engineering_to_owner
+title: 工程款到老板手（小规模纳税人·快照口径）
+steps:
+  # ---- 增值税环节 ---------------------------------------------
+  - as: levy_rate
+    op: param                      # 运行期解析：2023-2027 减按1%，否则3%
+    rule: cn/vat/small_goods
+    param: rate
+    desc: 小规模纳税人现行征收率
+
+  - as: vat_excl_revenue
+    op: expr                       # 价税分离：不含税收入 = 含税/(1+率)
+    desc: 不含税收入 = 合同额÷(1+征收率)
+    expr: contract_gross / (1 + levy_rate)
+
+  - as: vat_payable
+    op: expr
+    desc: 增值税 = 不含税收入×征收率
+    expr: vat_excl_revenue * levy_rate
+
+  # ---- 附加税费（随实缴增值税走）-------------------------------
+  - as: urban_tax
+    op: rule
+    rule: cn/surtax/urban_7pct
+    args: {base: vat_payable}
+    desc: 城建税（市区7%）
+
+  - as: edu_sur
+    op: rule
+    rule: cn/surtax/edu_surcharge_3pct
+    args: {base: vat_payable}
+    desc: 教育费附加（3%）
+
+  - as: local_edu
+    op: rule
+    rule: cn/surtax/local_edu_2pct
+    args: {base: vat_payable}
+    desc: 地方教育附加（2%）
+
+  - as: surcharge_total
+    op: expr
+    desc: 税金及附加合计
+    expr: urban_tax + edu_sur + local_edu
+
+  # ---- 企业所得税（账面口径）-----------------------------------
+  - as: cit_taxable
+    op: expr
+    desc: 应纳税所得额 = 不含税收入 − 成本 − 税金及附加
+    expr: vat_excl_revenue - cost_expense - surcharge_total
+
+  - as: cit_payable
+    op: rule
+    rule: cn/cit/small_low_profit
+    args: {base: cit_taxable}
+    desc: 企业所得税（小微断崖：≤300万实际5%，超300万全额25%）
+
+  # ---- 现金流与分红 --------------------------------------------
+  - as: distributable
+    op: expr
+    desc: 可分配现金 = 合同额 − 增值税 − 附加 − 成本 − 企税
+    expr: contract_gross - vat_payable - surcharge_total - cost_expense - cit_payable
+
+  - as: dividend_tax
+    op: rule
+    rule: cn/iit/dividend
+    args: {base: distributable}
+    desc: 股息红利个税20%（全额清仓假设）
+
+  - as: owner_net
+    op: expr
+    result: true
+    desc: 到手 = 可分配现金 − 分红个税
+    expr: distributable - dividend_tax
