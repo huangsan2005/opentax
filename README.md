@@ -1,111 +1,119 @@
-# OpenTax 开源税务计算引擎
+# OpenTax — Open-Source Tax Calculation Engine
 
-**规则即数据（YAML 插件）+ 零知识引擎 + 确定性场景枚举。**
-引擎代码里没有一个具体税率；所有算术用精确分数执行；交易日期超出规则收录区间时**拒绝作答而不是硬算**。
+**Rules as data (YAML plugins) + zero-knowledge engine + deterministic scenario enumeration.**
+The engine code contains no tax rates at all; all arithmetic runs on exact fractions; when a transaction date falls outside every rule's effective window, the engine **refuses to answer instead of guessing**.
 
-> **为什么做这个**：大语言模型回答税务问题时频繁出错——政策版本漂移（新旧文号混在训练语料里）、语言模型不做真算术（中间数字漂移全链崩）、高质量计税案例语料稀缺。本项目的答案是把「知识」与「计算」彻底分离：**LLM 负责听懂问题，本引擎负责算对数字。**
+> **Why this exists**: LLMs frequently give wrong answers on tax questions — policy version drift (old and new documents mixed in training data), language models don't actually do arithmetic (one drifted digit collapses the whole chain), and high-quality worked tax examples are scarce in public corpora. This project's answer is to **separate knowledge from computation**: the LLM listens and clarifies; this engine computes.
 
-> **这是一个基础程序**：目前只内置了中国四个税种的核心规则，引擎能力远大于现有数据量——桥墩已打好，桥面靠大家铺。**欢迎任何人提供交税信息来完善它**：税率文件文号、官方算例、真实申报表数据、地方口径差异、其他国家税制，都能直接入库。无需会编程，照着现有 YAML 抄一份即可，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+> **This is a foundation awaiting your data**: only a handful of core rules (currently China) are built in — the engine's capacity far exceeds the current dataset. The pillars are standing; the deck needs builders. **Contributions of tax data from ANY country are welcome**: statute citations with document numbers, official worked examples, real filed-return figures, sub-national variations, entire foreign tax systems. No programming needed — copy an existing YAML and fill in your numbers. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+> 中文说明：[README_zh.md →](README_zh.md) — English version here.
 
 ---
 
-## 三条铁律
+## Three Iron Rules
 
-1. **改税只改 YAML** —— 引擎零税务知识，规则是带文号与生效区间的数据插件；
-2. **过期拒答** —— 每条规则带 `effective` 区间与一手来源文号，日期不命中直接抛 `[拒答]`；
-3. **双路径互验** —— 超额累进同时执行「逐档切片」与「速算扣除」两条路径，不一致立即报错（开发中发现并拦截过一次测试数据手误）。
+1. **Change taxes only in YAML** — the engine knows zero tax law; rules are data plugins with legal citations and effective date ranges.
+2. **Out-of-date = refuse** — every rule carries `effective` bounds and a first-hand source document number; a date outside every window throws `[REFUSED]` instead of computing.
+3. **Dual-path self-verification** — progressive taxes are computed twice (bracket slicing AND quick-deduction formula); any mismatch raises immediately. This check has already caught one real data-entry error during development.
 
-## 快速开始
+## Quick Start
 
 ```bash
-python run_tests.py        # 25 个 golden 测试
+python run_tests.py        # 25 golden tests
 
-# 单条规则：土地增值税（复现真实 T20000 申报表：应缴 64,099,828.80）
+# Single rule: China land value-added tax (reproduces a real filed
+# T20000 return: 64,099,828.80 CNY)
 python -m open_tax single --date 2026-03-01 --rule cn/lvat/four_bracket \
     --set amount=106833048 --set base=0
 
-# 管线瀑布：115 万工程款 -> 老板到手 408,308.12（附全文号依据链）
-# 缺必填参数时会输出追问清单（退出码3），无票成本自动挂催票警示
+# Pipeline waterfall: a 1.15M CNY construction contract -> owner's
+# take-home 408,308.12, with a citation chain on every step.
+# Missing required inputs produce a question list (exit code 3);
+# uninvoiced costs automatically trigger a "collect invoices" warning.
 python -m open_tax pipeline --pipeline engineering_to_owner \
     --date 2026-03-01 --set contract_gross=1150000 --set cost_invoiced=600000
 
-# 场景枚举：同一合同的开票节奏寻优（确定性穷举，非 AI 观点）
+# Scenario enumeration: invoice-timing optimization for the same
+# contract (deterministic exhaustive search, not an AI opinion)
 python -m open_tax enumerate --scenario withdrawal_strategy \
     --date 2026-03-01 --set contract_gross=1150000 --set cost_expense=900000
 ```
 
-枚举输出的真实结论（机器穷举发现）：
+A real finding from enumeration (machine-discovered):
 
-| 排名 | 方案 | 到手 |
+| Rank | Strategy | Take-home (CNY) |
 |---|---|---|
-| 1 | 四季均匀开票（每季≤30万免征线内） | **190,455.45** |
-| 2-4 | 集中单季 / 两季 / 三季（每季都超线全额计税） | 180,308.12 |
+| 1 | Spread invoicing evenly across 4 quarters (each under the 300k quarterly exemption line) | **190,455.45** |
+| 2–4 | Lump / 2 / 3 quarters (every quarter over the line → taxed in full) | 180,308.12 |
 
-注意最后一行：**分散到 2 或 3 季毫无用处**——免征看单个周期，只有摊满四季才生效。这正是拍脑袋容易错、穷举不会错的典型问题。
+Note: spreading over 2 or 3 quarters is **useless** — the exemption tests each period alone; only a full 4-quarter spread lands inside it. Exactly the kind of trap where guessing fails and enumeration doesn't.
 
-## 已收录规则（全部含文号+生效期）
+## Rules Included (all with citations + effective ranges)
 
-| 规则 | 原语 | 来源 |
+| Rule | Primitive | Source |
 |---|---|---|
-| 个税综合所得年度税率表（7级） | `progressive` 双路径互验 | 主席令第九号 |
-| 个税经营所得税率表（5级） | `progressive` | 主席令第九号 |
-| 股息红利 20% | `flat` | 主席令第九号 |
-| 土地增值税四级超率累进 | `super_progressive` | 国务院令第138号 |
-| 增值税小规模征收率（3%基准 / 2023-2027减按1%窗口，自动切换） | `flat` 多版本 | 财税〔2016〕36号 / 2023年19号公告 |
-| 小规模季度30万免征（断崖式：超线全额计税） | `threshold_exempt` | 财税〔2019〕13号 → 19号公告 |
-| 小型微利企业≤300万实际5%（断崖式优惠至2027-12-31） | `tiered_cliff` | 2023年第12号公告 |
-| 城建税三档 / 教育费附加 / 地方教育附加 / 建筑合同印花税 | `flat` | 各自法律与文号 |
+| China IIT annual comprehensive income table (7 brackets) | `progressive` w/ dual-path verification | Presidential Decree No. 9 |
+| China IIT business income table (5 brackets) | `progressive` | Presidential Decree No. 9 |
+| Dividend/interest 20% | `flat` | Presidential Decree No. 9 |
+| Land value-added tax, 4-bracket super-progressive | `super_progressive` | State Council Decree No. 138 |
+| Small-scale taxpayer VAT levy rate (3% base / reduced 1% window 2023–2027, auto-switching) | `flat`, multi-version | Caishui [2016] 36 / STA-SAT Announcement [2023] 19 |
+| Small-scale quarterly ≤300k exemption (cliff: exceed once → taxed on the full amount) | `threshold_exempt` | Caishui [2019] 13 → [2023] 19 |
+| Small low-profit CIT (≤3M at effective 5%, cliff back to 25%, through 2027-12-31) | `tiered_cliff` | Announcement [2023] 12 |
+| Urban construction tax (3 tiers) / education surcharges / construction-contract stamp duty | `flat` | respective statutes |
 
-## 七个原语（世界接哪个国家都够用）
+## Seven Primitives (enough to onboard any country)
 
-`flat`（比例）· `multiply`（数据驱动调整）· `progressive`（超额累进+双路径自验）· `super_progressive`（超率累进）· `compound`（从价从量复合，烟酒类）· `tiered_cliff`（断崖式优惠）· `threshold_exempt`（起征点式免征）
+`flat` (proportional) · `multiply` (data-driven adjustment) · `progressive` (marginal brackets + dual-path self-check) · `super_progressive` (rate-progressive, e.g. land VAT) · `compound` (ad valorem + per-unit, tobacco/alcohol) · `tiered_cliff` (cliff-edge relief) · `threshold_exempt` (threshold exemption)
 
-再加价税分离工具 `price_split(含税价, 率)`。
+Plus a price-split helper `price_split(gross_incl_tax, rate)`.
 
-## 架构
+## Architecture
 
 ```
-data/rules/cn/*.yaml      规则插件（税率、区间、生效期、来源文号、verified_by署名）
-data/pipelines/*.yaml     计税瀑布（步骤引用规则库；安全算式白名单求值）
-data/scenarios/*.yaml     决策轴定义（枚举器按轴组合完整跑管线并排名）
-open_tax/engine/          零知识内核：原语 + 版本解析 + 审计链
-open_tax/cli.py           CLI 入口（LLM 编排层的裸骨版）
-tests/test_golden.py      官方口径锚点 + T20000 真实案例回归
-.github/workflows/ci.yml  PR 自动回归；过期数据自动开 issue 提醒复核
+data/rules/<jurisdiction>/*.yaml   rule plugins (rates, windows, citations, verified_by)
+data/pipelines/*.yaml              calculation waterfalls (steps reference the rule library)
+data/scenarios/*.yaml              decision axes (enumerate combos, rank by result)
+open_tax/engine/                   zero-knowledge core: primitives + versioning + audit trail
+open_tax/cli.py                    CLI entry (bare-bones LLM orchestration layer)
+tests/test_golden.py               official anchors + real-return regressions
+.github/workflows/ci.yml           PR regression; weekly scan auto-files issues for expiring rules
 ```
 
-管线示例（没有任何硬编码税率——征收率运行期按交易日期从规则库解析）：
+Pipeline example (zero hard-coded rates — the levy rate is resolved from the rule library at run time by transaction date):
 
 ```yaml
 - as: levy_rate
-  op: param                      # 2023-2027 解析出 0.01，窗口外回落 0.03
+  op: param                      # resolves 0.01 inside the 2023–2027 window, else 0.03
   rule: cn/vat/small_goods
 - as: vat_taxable
   op: expr
   expr: contract_gross / (1 + levy_rate)
 ```
 
-## 如何贡献（会 Excel 就能参与）
+## How to Contribute (Excel skills suffice)
 
-1. **报错**（最欢迎）：提 Issue，模板填「哪条规则、哪笔算错、依据文号」，附官方文件链接即可；
-2. **补规则**：PR = 一份 YAML（照抄 `data/rules/cn/lvat.yaml` 的结构）+ 一个 golden 用例。硬门槛三条：
-   - 法律/行政法规/财政部税务总局公告级一手文件；
-   - 写明文号与生效区间（截止日未知写 `null`）；
-   - 至少一个官方算例或可验证的申报表实例作为测试锚点。
-3. **成为核验人**：多次有效贡献后在 `verified_by` 署名——你的职业品牌挂在你核验过的规则上。
+1. **Report errors** (most welcome): open an Issue — rule ID, transaction date, expected vs actual, **source document number + official link**.
+2. **Add rules**: a PR = one YAML file (copy any file under `data/rules/`) + one golden anchor test. Hard requirements:
+   - statute / regulation / official-announcement-level first-hand source;
+   - document number + effective range (use `null` if open-ended);
+   - at least one official worked example or verifiable filed-return figure as the test anchor.
+3. **Become a verifier**: sustained contributors get credited in `verified_by` — your professional brand attached to the rules you verify.
 
-## 路线图
+**Adding your country**: pick the closest primitive (see table above), write one YAML under `data/rules/<country>/`, add one test. If it doesn't fit a primitive, open an issue — the primitive set is small on purpose and grows only with a concrete use case.
 
-- [x] 引擎 + 中国四税种全链路 + 场景枚举器（本仓库现状）
-- [ ] 卷烟全链条案例（农业免税→工厂复合消费税→批发加征→增值税抵扣链模拟）
-- [ ] 年终奖单独计税（财税〔2018〕164号，延至2027-12-31）
-- [ ] 六税两费减半补充包、各省地方教育附加版本
-- [ ] 第二个国家样本（美国联邦个税表或欧盟 VAT，验证“只写数据不改代码”）
-- [ ] LLM 编排层规范：缺参数必须追问；输出强制携带数据新鲜度声明
+## Roadmap
 
-## 免责声明
+- [x] Engine + China four-tax full chain + scenario enumerator (current state)
+- [ ] Cigarette full-chain case (agricultural exemption → factory compound consumption tax → wholesale levy → VAT credit-chain simulation)
+- [ ] China annual-bonus separate taxation (through 2027-12-31)
+- [ ] Six-taxes-two-fees halving supplement pack; per-province local education surcharge versions
+- [ ] **Second-country sample** (US federal income tax table or EU VAT — to prove "data only, no code changes")
+- [ ] LLM orchestration spec: mandatory parameter follow-ups; freshness statement on every output
 
-本项目输出为工具计算结果，**仅供参考，不构成税务建议或申报依据**。税务处理具有强事实依赖性，请就具体事项咨询执业税务师/会计师。规则数据以官方正式文件的现行有效文本为准；发现错漏请提交 Issue，我们会带着测试用例修正。
+## Disclaimer
+
+Output is a tool-computed result, **for reference only — not tax advice and not a filing basis**. Tax treatment is strongly fact-dependent; consult a licensed professional for specific matters. Rule data must always yield to the currently-effective official text; found an error? Please open an Issue — we fix with test cases attached.
 
 ## License
 
