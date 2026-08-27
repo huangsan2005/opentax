@@ -1,0 +1,30 @@
+id: eu_vat_price_split_de
+title: "EU VAT price decomposition (standard rate) — DE"
+# 管线：EU 含税零售价税分解（标准税率，国家由 rule id 决定）
+# 每国一份（_de/_fr/_it/_nl/_es/_pl/_se），结构完全一致——
+# 这正是"模板相同、数据不同"的样本：新增成员国=复制改两行。
+# EU VAT 是价内税（标价含税）：税 = 含税÷(1+率)×率。
+inputs:
+  gross_price: {"question": "Gross retail price (EUR, VAT included)?", "required": true}
+steps:
+  - as: vat_rate
+    op: param
+    rule: eu/vat/standard_de            # ← 每国管线唯一差异点
+    param: rate
+    desc: Standard VAT rate (Germany)
+
+  - as: net_price
+    op: expr
+    desc: "net = gross ÷ (1+rate)"
+    expr: gross_price / (1 + vat_rate)
+
+  - as: vat_amount
+    op: expr
+    desc: "VAT = gross − net"
+    expr: gross_price - net_price
+
+  - as: vat_share_pct
+    op: expr
+    result: true
+    desc: "VAT share of gross price (%)"
+    expr: vat_amount / gross_price * 100

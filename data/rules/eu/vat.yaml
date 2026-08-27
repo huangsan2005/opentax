@@ -1,0 +1,159 @@
+# 欧盟增值税（EU VAT）成员国税率 —— 第三国样本（多国独立 id 结构）
+#
+# 结构说明（对应 EU VAT 的制度现实）：
+#   - VAT 指令（Council Directive 2006/112/EC）只设下限：标准税率 >= 15%；
+#     具体税率由各成员国法律决定 → 每国独立 rule id（eu/vat/standard_<ISO>），
+#     各带本国法律来源；同 id 的历史版本再按 effective 拆条目。
+#   - 数字来源：欧盟委员会 Taxes in Europe 数据库 / 各国税务局官网，
+#     last_verified 2026-08-28。社区核验时请附各国官方链接并补历史版本。
+meta:
+  jurisdiction: eu
+  category: VAT (Value Added Tax)
+
+tables:
+  # ---- 德国 Deutschland ----------------------------------------
+  - id: eu/vat/standard_de
+    primitive: flat
+    description: Germany standard VAT (Umsatzsteuer) 19%
+    effective: ["2007-01-01", null]
+    priority: 0
+    country: DE
+    source:
+      title: Umsatzsteuergesetz (UStG) §12
+      doc_no: UStG §12 (DE)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.19"}
+
+  - id: eu/vat/reduced_de
+    primitive: flat
+    description: Germany reduced VAT 7%（食品/书籍/客运；2020年7-12月临时16/5%不在本表）
+    effective: ["1983-07-01", null]
+    priority: 0
+    country: DE
+    source:
+      title: UStG §12 Abs. 2
+      doc_no: UStG §12(2) (DE)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.07"}
+
+  # ---- 法国 France ---------------------------------------------
+  - id: eu/vat/standard_fr
+    primitive: flat
+    description: France standard VAT (TVA) 20%
+    effective: ["2014-01-01", null]
+    priority: 0
+    country: FR
+    source:
+      title: Code général des impôts art. 278
+      doc_no: CGI art. 278 (FR)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.20"}
+
+  - id: eu/vat/reduced_fr
+    primitive: flat
+    description: France reduced VAT 5.5%（食品/书籍；中间档10%不在本表）
+    effective: ["2012-01-01", null]
+    priority: 0
+    country: FR
+    source:
+      title: CGI art. 278 bis
+      doc_no: CGI art. 278 bis (FR)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.055"}
+
+  # ---- 意大利 Italia -------------------------------------------
+  - id: eu/vat/standard_it
+    primitive: flat
+    description: Italy standard VAT (IVA) 22%
+    effective: ["2013-10-01", null]
+    priority: 0
+    country: IT
+    source:
+      title: DPR 633/1972 art. 1
+      doc_no: DPR 633/1972 (IT)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.22"}
+
+  # ---- 荷兰 Nederland ------------------------------------------
+  - id: eu/vat/standard_nl
+    primitive: flat
+    description: Netherlands standard VAT (BTW) 21%
+    effective: ["2012-10-01", null]
+    priority: 0
+    country: NL
+    source:
+      title: Wet op de omzetbelasting 1968
+      doc_no: Wet OB 1968 (NL)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.21"}
+
+  - id: eu/vat/reduced_nl
+    primitive: flat
+    description: Netherlands reduced VAT 9%（2019年由6%上调）
+    effective: ["2019-01-01", null]
+    priority: 0
+    country: NL
+    source:
+      title: Wet OB 1968 — 2019 raise from 6% to 9%
+      doc_no: Wet OB 1968 (NL)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.09"}
+
+  # ---- 西班牙 España -------------------------------------------
+  - id: eu/vat/standard_es
+    primitive: flat
+    description: Spain standard VAT (IVA) 21%
+    effective: ["2012-09-01", null]
+    priority: 0
+    country: ES
+    source:
+      title: Ley 37/1992 del IVA art. 90
+      doc_no: Ley 37/1992 (ES)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.21"}
+
+  # ---- 波兰 Polska ---------------------------------------------
+  - id: eu/vat/standard_pl
+    primitive: flat
+    description: Poland standard VAT (PTU) 23%
+    effective: ["2011-01-01", null]
+    priority: 0
+    country: PL
+    source:
+      title: Ustawa o VAT art. 41
+      doc_no: Ustawa o VAT (PL)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.23"}
+
+  # ---- 瑞典 Sverige --------------------------------------------
+  - id: eu/vat/standard_se
+    primitive: flat
+    description: Sweden standard VAT (moms) 25% —— EU 最高标准税率档
+    effective: ["1990-01-01", null]
+    priority: 0
+    country: SE
+    source:
+      title: Mervärdesskattelag (1994:200) 9 kap
+      doc_no: ML 1994:200 (SE)
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.25"}

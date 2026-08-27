@@ -1,0 +1,22 @@
+# 场景：同一含税价在七个成员国的 VAT 分解对比
+# 教学要点：EU 指令只设 15% 下限，成员国标准税率 19%~25% 不等；
+# 同一张价签在斯德哥尔摩和柏林的"含税率"完全不同。
+id: eu_vat_country_compare
+title: "Same gross price across 7 member states (standard rate)"
+pipeline: eu_vat_price_split_de
+result_var: vat_share_pct
+axes:
+  - var: country
+    cases:
+      DE: {label: "Germany 19%", pipeline: eu_vat_price_split_de}
+      FR: {label: "France 20%", pipeline: eu_vat_price_split_fr}
+      IT: {label: "Italy 22%", pipeline: eu_vat_price_split_it}
+      NL: {label: "Netherlands 21%", pipeline: eu_vat_price_split_nl}
+      ES: {label: "Spain 21%", pipeline: eu_vat_price_split_es}
+      PL: {label: "Poland 23%", pipeline: eu_vat_price_split_pl}
+      SE: {label: "Sweden 25%", pipeline: eu_vat_price_split_se}
+assumptions:
+  - "Gross price identical in all countries (same product, EUR)"
+  - "Standard rate applies (no reduced/exempt items)"
+  - "Rates as of last_verified 2026-08; member states may change them"
+  - "Note: enumerator ranks DESCENDING on vat_share_pct — rank 1 = highest VAT share (Sweden)"

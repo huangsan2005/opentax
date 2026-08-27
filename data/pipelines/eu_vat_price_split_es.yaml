@@ -1,0 +1,27 @@
+id: eu_vat_price_split_es
+title: "EU VAT price decomposition (standard rate) — ES"
+# Spain 21% — structure identical to _de variant
+inputs:
+  gross_price: {"question": "Gross retail price (EUR, VAT included)?", "required": true}
+steps:
+  - as: vat_rate
+    op: param
+    rule: eu/vat/standard_es
+    param: rate
+    desc: Standard VAT rate (Spain)
+
+  - as: net_price
+    op: expr
+    desc: "net = gross ÷ (1+rate)"
+    expr: gross_price / (1 + vat_rate)
+
+  - as: vat_amount
+    op: expr
+    desc: "VAT = gross − net"
+    expr: gross_price - net_price
+
+  - as: vat_share_pct
+    op: expr
+    result: true
+    desc: "VAT share of gross price (%)"
+    expr: vat_amount / gross_price * 100
