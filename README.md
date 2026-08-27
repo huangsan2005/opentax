@@ -16,15 +16,16 @@
 ## 快速开始
 
 ```bash
-python run_tests.py        # 21 个 golden 测试
+python run_tests.py        # 25 个 golden 测试
 
 # 单条规则：土地增值税（复现真实 T20000 申报表：应缴 64,099,828.80）
 python -m open_tax single --date 2026-03-01 --rule cn/lvat/four_bracket \
     --set amount=106833048 --set base=0
 
 # 管线瀑布：115 万工程款 -> 老板到手 408,308.12（附全文号依据链）
+# 缺必填参数时会输出追问清单（退出码3），无票成本自动挂催票警示
 python -m open_tax pipeline --pipeline engineering_to_owner \
-    --date 2026-03-01 --set contract_gross=1150000 --set cost_expense=600000
+    --date 2026-03-01 --set contract_gross=1150000 --set cost_invoiced=600000
 
 # 场景枚举：同一合同的开票节奏寻优（确定性穷举，非 AI 观点）
 python -m open_tax enumerate --scenario withdrawal_strategy \
