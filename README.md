@@ -60,11 +60,13 @@ Note: spreading over 2 or 3 quarters is **useless** — the exemption tests each
 | Small-scale taxpayer VAT levy rate (3% base / reduced 1% window 2023–2027, auto-switching) | `flat`, multi-version | Caishui [2016] 36 / STA-SAT Announcement [2023] 19 |
 | Small-scale quarterly ≤300k exemption (cliff: exceed once → taxed on the full amount) | `threshold_exempt` | Caishui [2019] 13 → [2023] 19 |
 | Small low-profit CIT (≤3M at effective 5%, cliff back to 25%, through 2027-12-31) | `tiered_cliff` | Announcement [2023] 12 |
-| Urban construction tax (3 tiers) / education surcharges / construction-contract stamp duty | `flat` | respective statutes |
+| Annual bonus separate taxation (÷12 bracket, cliff "blind zones" anchored at 36k/144k boundaries, through 2027-12-31) | `lump_bracket` | Caishui [2018] 164 |
+| Tobacco chain: leaf tax 20% / Class-A & B production excise (56%/36% + 0.003/stick) / wholesale excise (11% + 250/carton) | `flat`/`compound` | Tobacco Leaf Tax Law; Caishui [2015] 60 |
+| VAT on goods (17%→16%→13% multi-version, auto-selected by date) | `flat`, multi-version | VAT Regulations; Caishui [2018] 32; Announcement [2019] 39 |
 
-## Seven Primitives (enough to onboard any country)
+## Eight Primitives (enough to onboard any country)
 
-`flat` (proportional) · `multiply` (data-driven adjustment) · `progressive` (marginal brackets + dual-path self-check) · `super_progressive` (rate-progressive, e.g. land VAT) · `compound` (ad valorem + per-unit, tobacco/alcohol) · `tiered_cliff` (cliff-edge relief) · `threshold_exempt` (threshold exemption)
+`flat` (proportional) · `multiply` (data-driven adjustment) · `progressive` (marginal brackets + dual-path self-check) · `super_progressive` (rate-progressive, e.g. land VAT) · `compound` (ad valorem + per-unit, tobacco/alcohol) · `tiered_cliff` (cliff-edge relief) · `threshold_exempt` (threshold exemption) · `lump_bracket` (one-off income: ÷12 bracket with single quick-deduction — the annual-bonus "blind zone" structure)
 
 Plus a price-split helper `price_split(gross_incl_tax, rate)`.
 
@@ -105,8 +107,8 @@ Pipeline example (zero hard-coded rates — the levy rate is resolved from the r
 ## Roadmap
 
 - [x] Engine + China four-tax full chain + scenario enumerator (current state)
-- [ ] Cigarette full-chain case (agricultural exemption → factory compound consumption tax → wholesale levy → VAT credit-chain simulation)
-- [ ] China annual-bonus separate taxation (through 2027-12-31)
+- [x] Cigarette full-chain case (leaf tax → factory compound excise with in-tax back-solving → wholesale levy → VAT credit chain; teaches why cheap packs die on the fixed per-carton levy)
+- [x] China annual-bonus separate taxation (lump_bracket primitive; blind-zone cliffs anchored; policy blank after 2027-12-31 refuses by design)
 - [ ] Six-taxes-two-fees halving supplement pack; per-province local education surcharge versions
 - [ ] **Second-country sample** (US federal income tax table or EU VAT — to prove "data only, no code changes")
 - [ ] LLM orchestration spec: mandatory parameter follow-ups; freshness statement on every output

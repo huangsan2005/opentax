@@ -1,0 +1,98 @@
+# 中国烟草产业链相关税种（教学用权威口径，测算基准见 golden 测试）
+# 链条：农业种植（免增值税）→ 烟叶税20% → 工业生产（甲类56%+0.003元/支）
+#       → 批发（11%+250元/条加征）→ 零售（增值税环环抵扣）
+meta:
+  jurisdiction: cn
+  category: 消费税/烟草链
+
+tables:
+  # ---- 烟叶税 ----------------------------------------------------
+  - id: cn/tobacco_leaf
+    primitive: flat
+    description: 烟叶税 20%（收购金额为计税基础，价外补贴并入）
+    effective: ["2006-04-28", null]
+    source:
+      title: 中华人民共和国烟叶税法
+      doc_no: 中华人民共和国主席令第八十六号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.20"}
+
+  # ---- 生产环节消费税 -------------------------------------------
+  - id: cn/cig_production_class_a
+    primitive: compound
+    description: 甲类卷烟生产环节消费税（56%从价 + 0.003元/支从量）
+    effective: ["2015-05-10", null]
+    source:
+      title: 关于调整卷烟消费税的通知
+      doc_no: 财税〔2015〕60号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base, quantity]
+    params: {ad_valorem_rate: "0.56", unit_tax: "0.003"}
+
+  - id: cn/cig_production_class_b
+    primitive: compound
+    description: 乙类卷烟生产环节消费税（36%从价 + 0.003元/支从量）
+    effective: ["2015-05-10", null]
+    source:
+      title: 关于调整卷烟消费税的通知
+      doc_no: 财税〔2015〕60号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base, quantity]
+    params: {ad_valorem_rate: "0.36", unit_tax: "0.003"}
+
+  # ---- 批发环节消费税（双环节消费税：生产+批发）-------------------
+  - id: cn/cig_wholesale
+    primitive: compound
+    description: 卷烟批发环节消费税（11%从价 + 250元/条从量加征）
+    effective: ["2015-05-10", null]
+    source:
+      title: 关于调整卷烟消费税的通知 第一条
+      doc_no: 财税〔2015〕60号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base, quantity]
+    params: {ad_valorem_rate: "0.11", unit_tax: "250"}
+
+  # ---- 增值税多版本（一般货物的比例档，供链条价税分离使用）--------
+  - id: cn/vat/goods_17
+    primitive: flat
+    description: 增值税·货物销售（1994-2018.4：17%基准档）
+    effective: ["1994-01-01", "2018-04-30"]
+    priority: 0
+    source:
+      title: 中华人民共和国增值税暂行条例 第二条
+      doc_no: 国务院令第134号（1993）及历次修订
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.17"}
+
+  - id: cn/vat/goods_17
+    primitive: flat
+    description: 增值税·货物销售（2018.5-2019.3：16%）
+    effective: ["2018-05-01", "2019-03-31"]
+    priority: 0
+    source:
+      title: 关于调整增值税税率的通知
+      doc_no: 财税〔2018〕32号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.16"}
+
+  - id: cn/vat/goods_17
+    primitive: flat
+    description: 增值税·货物销售（2019.4起：13%）
+    effective: ["2019-04-01", null]
+    priority: 0
+    source:
+      title: 关于深化增值税改革有关政策的公告
+      doc_no: 财政部 税务总局 海关总署公告2019年第39号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.13"}

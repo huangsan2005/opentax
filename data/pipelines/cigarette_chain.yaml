@@ -1,0 +1,178 @@
+# 管线：卷烟全链条税负分解（教学口径）
+# 输入：retail_gross 含税零售价（元/包）；其余默认值按中高档烟设定。
+# 结构要点（消费税为价内税，决定了倒推方式）：
+#   零售含税价 ÷(1+增值税率) = 零售不含税
+#   零售不含税 − 零售毛利   = 批发不含税价
+#   批发不含税价 − 批发毛利 = 工厂含消费税开票价（批发商的进货成本）
+#   工厂开票价 = 出厂不含税价 + 出厂价×56% + 0.003×支数
+#   -> 出厂价 = (工厂开票价 − 从量税) ÷ 1.56   （解方程，非简单减法）
+# 增值税环环抵扣（价外）：各环节缴"增值额×率"；消费税虽价内滚入，
+# 但不产生增值税进项——批发环节因此要对"毛利+滚入的消费税"缴增值税，
+# 这是真实税负结构，也是卷烟整体税负高的原因之一。
+# 农业种植环节自产农产品免增值税，链条从收购/烟叶税开始（起点断裂不建模）。
+# 烟叶税进项抵扣、农产品加计抵扣等细节教学口径从简，见 notes。
+id: cigarette_chain
+title: 一包烟的税负分解（烟叶税→生产→批发→零售）
+inputs:
+  retail_gross: {question: 零售价是多少（含税，元/包）？, required: true}
+steps:
+  - as: sticks_per_pack
+    op: param_or_input
+    key: sticks_per_pack
+    default: "20"
+    desc: 每包支数
+
+  - as: packs_per_carton
+    op: param_or_input
+    key: packs_per_carton
+    default: "50"
+    desc: 每条包数
+
+  - as: leaf_cost
+    op: param_or_input
+    key: leaf_cost
+    default: "3"
+    desc: 烟叶收购成本（元/包）
+
+  - as: other_cost
+    op: param_or_input
+    key: other_cost
+    default: "2"
+    desc: 工业其他成本（元/包）
+
+  - as: wholesale_margin
+    op: param_or_input
+    key: wholesale_margin
+    default: "4"
+    desc: 批发环节毛利（元/包）
+
+  - as: retail_margin
+    op: param_or_input
+    key: retail_margin
+    default: "3"
+    desc: 零售环节毛利（元/包）
+
+  # ---- 税率参数全部运行期解析 ----------------------------------
+  - as: vat_rate
+    op: param
+    rule: cn/vat/goods_17
+    param: rate
+    desc: 货物增值税率（13%/16%/17% 按交易日自动取版本）
+
+  - as: factory_ad_rate
+    op: param
+    rule: cn/cig_production_class_a
+    param: ad_valorem_rate
+    desc: 甲类生产环节从价消费税率
+
+  - as: factory_unit_tax
+    op: param
+    rule: cn/cig_production_class_a
+    param: unit_tax
+    desc: 生产环节从量税（元/支）
+
+  - as: wholesale_ad_rate
+    op: param
+    rule: cn/cig_wholesale
+    param: ad_valorem_rate
+    desc: 批发环节从价消费税率
+
+  - as: wholesale_unit_param
+    op: param
+    rule: cn/cig_wholesale
+    param: unit_tax
+    desc: 批发环节从量税（元/条）
+
+  # ---- 价格倒推 ------------------------------------------------
+  - as: retail_excl
+    op: expr
+    desc: 零售不含税价 = 含税÷(1+增值税率)
+    expr: retail_gross / (1 + vat_rate)
+
+  - as: wholesale_excl
+    op: expr
+    desc: 批发不含税价 = 零售不含税 − 零售毛利
+    expr: retail_excl - retail_margin
+
+  - as: factory_with_excise
+    op: expr
+    desc: 工厂含消费税开票价 = 批发价 − 批发毛利（批发商进货成本）
+    expr: wholesale_excl - wholesale_margin
+
+  - as: factory_excl
+    op: expr
+    desc: 出厂不含税价 = (开票价 − 从量税) ÷ (1+从价率)  [价内税解方程]
+    expr: (factory_with_excise - sticks_per_pack * factory_unit_tax) / (1 + factory_ad_rate)
+
+  - as: factory_excise
+    op: rule
+    rule: cn/cig_production_class_a
+    args: {base: factory_excl, quantity: sticks_per_pack}
+    desc: 生产环节消费税（甲类 56%+0.003元/支）
+
+  - as: identity_check
+    op: assert
+    expr: factory_excl + factory_excise - factory_with_excise == 0
+    message: "价内税恒等式破坏：出厂价+消费税 != 工厂开票价，请上报规则数据错误"
+
+  - as: breakeven_check
+    op: assert
+    expr: factory_excl > leaf_cost + other_cost
+    message: "出厂价低于烟叶+其他成本之和，输入不构成可运行的经营假设（请调整成本/售价/毛利）。低价烟的现实是从量税挤压毛利，而非工厂亏本供货"
+
+  # ---- 烟叶税 --------------------------------------------------
+  - as: leaf_tax
+    op: rule
+    rule: cn/tobacco_leaf
+    args: {base: leaf_cost}
+    desc: 烟叶税20%（收购环节，价外补贴并入口径简化）
+
+  # ---- 批发环节消费税（11% + 250元/条）--------------------------
+  - as: wholesale_excise
+    op: rule
+    rule: cn/cig_wholesale
+    args: {base: wholesale_excl, quantity: 1 / packs_per_carton}
+    desc: 批发环节消费税（11%从价 + 250元/条从量，quantity按条）
+
+  # ---- 增值税（价外环环抵扣）------------------------------------
+  - as: factory_vat
+    op: expr
+    desc: 工业增值税 = (出厂价 − 烟叶 − 其他成本)×率（烟叶税/加计抵扣从简）
+    expr: (factory_excl - leaf_cost - other_cost) * vat_rate
+
+  - as: wholesale_vat
+    op: expr
+    desc: 批发增值税 = (批发价 − 出厂价)×率（增值额含滚入的消费税）
+    expr: (wholesale_excl - factory_excl) * vat_rate
+
+  - as: retail_vat
+    op: expr
+    desc: 零售增值税 = (零售不含税 − 批发价)×率 = 零售毛利×率
+    expr: (retail_excl - wholesale_excl) * vat_rate
+
+  # ---- 汇总 ----------------------------------------------------
+  - as: excise_total
+    op: expr
+    desc: 消费税类合计（烟叶税+生产+批发）
+    expr: leaf_tax + factory_excise + wholesale_excise
+
+  - as: vat_total
+    op: expr
+    desc: 增值税合计（三环节）
+    expr: factory_vat + wholesale_vat + retail_vat
+
+  - as: total_tax
+    op: expr
+    result: true
+    desc: 全链条税收合计
+    expr: excise_total + vat_total
+
+  - as: tax_share_pct
+    op: expr
+    desc: 税收占零售含税价比例（%）
+    expr: total_tax / retail_gross * 100
+
+  - as: excise_share_pct
+    op: expr
+    desc: 其中消费税类占比（%）
+    expr: excise_total / retail_gross * 100

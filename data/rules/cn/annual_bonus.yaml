@@ -1,0 +1,46 @@
+# 全年一次性奖金单独计税（财税〔2018〕164号，延续至2027-12-31）
+# 原语 lump_bracket：奖金÷12 定档，全额×档位率−速算扣除（只减一次）。
+# 经典"盲区"由 golden 测试锚定：36,000→1080 元税，36,001→3,390.1 元。
+meta:
+  jurisdiction: cn
+  category: 个人所得税
+
+tables:
+  - id: cn/iit/annual_bonus
+    primitive: lump_bracket
+    description: 全年一次性奖金单独计税（÷12找档，全额累进，存在盲区）
+    effective: ["2019-01-01", "2027-12-31"]
+    priority: 10
+    source:
+      title: 关于个人所得税法修改后有关优惠政策衔接问题的通知 第一条
+      doc_no: 财税〔2018〕164号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [amount]
+    notes:
+      - 该政策2023年公告延至2027-12-31，到期后自动失去此版本（拒答）。
+      - 档位边界上方存在税负跳升盲区（多1元奖金、税多数千），引擎审计链可见quota与档位。
+      - 每纳税人每年限用一次，由使用方（管线/LLM编排）自行把关，规则库不建模该限制。
+    params:
+      divisor: "12"
+      brackets:                      # 月度口径（按月换算的非全月表）
+        - {max_amount: "3000",    rate: "0.03", quick_deduct: "0"}
+        - {max_amount: "12000",   rate: "0.10", quick_deduct: "210"}
+        - {max_amount: "25000",   rate: "0.20", quick_deduct: "1410"}
+        - {max_amount: "35000",   rate: "0.25", quick_deduct: "2660"}
+        - {                       rate: "0.30", quick_deduct: "4410"}
+
+  - id: cn/iit/annual_bonus_2028
+    primitive: lump_bracket          # 占位提醒：2028起政策是否延续未知，
+    description: "[占位] 2028年后奖金计税方式待政策明确，当前收录区间之外"
+    effective: ["2028-01-01", null]
+    priority: 0
+    source:
+      title: 政策空白占位（防止2028年静默使用过期口径）
+      doc_no: 无——此条目生效即表示数据错误
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [amount]
+    notes:
+      - 此条目不应被真实计算命中：其 params 故意缺失，命中即抛错提醒补政策。
+    params: {}

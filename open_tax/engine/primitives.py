@@ -229,6 +229,39 @@ def threshold_exempt(args, params):
                       "rate": params["rate"]}}
 
 
+# ---------------------------------------------------------------
+# 8) lump_bracket -- 一次性收入全额累进（全年一次性奖金类）：
+#    按 amount÷divisor 的商数匹配"月度口径"档位，然后对奖金全额
+#    amount×档位税率 − 档位速算扣除数（只减一次）。
+#    与超额累进的本质区别：全额按档位率计税，因此档位边界存在
+#    "盲区"（奖金多1元、税额跳升数千元），golden 测试锚定该现象。
+# ---------------------------------------------------------------
+def lump_bracket(args, params):
+    amount = F(args["amount"])
+    if amount <= 0:
+        return {"value": Fraction(0), "audit": {"note": "amount<=0"}}
+    divisor = F(params.get("divisor", 1))
+    quota = amount / divisor
+    br = None
+    for b in params["brackets"]:
+        hi = b.get("max_amount")
+        if hi is None or quota <= F(hi):
+            br = b
+            break
+    if br is None:
+        raise TaxEngineError("lump_bracket: 商数 %s 未命中档位" % quota)
+    tax = amount * F(br["rate"]) - F(br.get("quick_deduct", 0))
+    return {
+        "value": _clamp_nonneg(tax),
+        "audit": {
+            "quota": str(quota),
+            "bracket": {k: br.get(k) for k in ("max_amount", "rate",
+                                               "quick_deduct")},
+            "formula": "全额×档位率−速算扣除(一次)，档位按 amount÷divisor",
+        },
+    }
+
+
 DISPATCH = {
     "flat": flat,
     "multiply": multiply,
@@ -237,6 +270,7 @@ DISPATCH = {
     "compound": compound,
     "tiered_cliff": tiered_cliff,
     "threshold_exempt": threshold_exempt,
+    "lump_bracket": lump_bracket,
 }
 
 
