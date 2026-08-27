@@ -1,0 +1,55 @@
+# 管线：美国联邦个税 2024（Married Filing Jointly）
+# 结构与 Single 版完全一致，仅标准扣除与税率表引用不同。
+id: us_federal_iit_mfj
+title: US Federal Income Tax 2024 (Married Filing Jointly)
+inputs:
+  gross_wages: {"question": "Annual gross wages (USD)?", "required": true}
+steps:
+  - as: std_deduction
+    op: param
+    rule: us/federal/std_deduction_mfj
+    param: amount
+    desc: 2024 standard deduction (MFJ)
+
+  - as: itemized
+    op: param_or_input
+    key: itemized
+    default: "0"
+    desc: itemized deduction (0 if not provided)
+
+  - as: deduction
+    op: expr
+    desc: deduction = max(std, itemized)
+    expr: (itemized > std_deduction) * itemized + (itemized <= std_deduction) * std_deduction
+
+  - as: taxable_income
+    op: expr
+    desc: taxable income = wages − deduction（下限0）
+    expr: (gross_wages - deduction > 0) * (gross_wages - deduction)
+
+  - as: federal_income_tax
+    op: rule
+    rule: us/federal/iit_2024_mfj
+    args: {amount: taxable_income}
+    desc: Federal income tax (MFJ brackets, Rev. Proc. 2023-34)
+
+  - as: effective_rate_pct
+    op: expr
+    desc: effective rate = tax ÷ wages (%)
+    expr: federal_income_tax / gross_wages * 100
+
+  - as: after_tax_income
+    op: expr
+    result: true
+    desc: after-tax income = wages − federal income tax (excl. FICA)
+    expr: gross_wages - federal_income_tax
+
+  - as: fica_social_security
+    op: expr
+    desc: FICA Social Security 6.2%（基数上限未建模）
+    expr: gross_wages * 0.062
+
+  - as: fica_medicare
+    op: expr
+    desc: FICA Medicare 1.45%
+    expr: gross_wages * 0.0145

@@ -1,0 +1,92 @@
+# 美国联邦个人所得税 2024 税务年度（第二国家样本）
+# 证明项目主张：接新国家只写数据、不改引擎代码。
+#
+# 口径说明：
+#   - tx_date = 收入归属的税务年度内任一日期（如 2024 年收入传 2024-12-31）。
+#     2025 年度参数（Rev. Proc. 2024-40 及 OBBBA 调整）尚未收录 -> 传 2025
+#     日期将拒答，社区可按同结构补版本条目。
+#   - 本表为"应纳税所得额"口径（已减除标准/分项扣除后的 taxable income）；
+#     扣除额由管线经标准扣除规则步骤完成。
+#   - 仅覆盖普通所得边际税率表；长期资本利得/合格股息单独税率表、
+#     AMT、Self-employment tax 均不在本表（社区补充包范畴）。
+meta:
+  jurisdiction: us
+  category: Federal Individual Income Tax
+
+tables:
+  # ---- Single 税率表 -------------------------------------------
+  - id: us/federal/iit_2024_single
+    primitive: progressive
+    description: US Federal IIT 2024, Single, marginal brackets on taxable income
+    effective: ["2024-01-01", "2024-12-31"]
+    priority: 0
+    source:
+      title: IRS Revenue Procedure 2023-34, section 2.01 (2024 tax year rate brackets)
+      doc_no: Rev. Proc. 2023-34
+      url: https://www.irs.gov/pub/irs-drop/rp-23-34.pdf
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [amount]
+    notes:
+      - 七档边际税率与起征点为官方公布；quick_deduct 由引擎切片法互验，
+        数值 = rate×下限 − 累计税额（IRS Tax Computation Worksheet 同构）。
+    params:
+      brackets:
+        - {max_amount: "11600",   rate: "0.10", quick_deduct: "0"}
+        - {max_amount: "47150",   rate: "0.12", quick_deduct: "232"}
+        - {max_amount: "100525",  rate: "0.22", quick_deduct: "4947"}
+        - {max_amount: "191950",  rate: "0.24", quick_deduct: "6957.50"}
+        - {max_amount: "243725",  rate: "0.32", quick_deduct: "22313.50"}
+        - {max_amount: "609350",  rate: "0.35", quick_deduct: "29625.25"}
+        - {                       rate: "0.37", quick_deduct: "41812.25"}
+
+  # ---- Married Filing Jointly 税率表 ----------------------------
+  - id: us/federal/iit_2024_mfj
+    primitive: progressive
+    description: US Federal IIT 2024, Married Filing Jointly
+    effective: ["2024-01-01", "2024-12-31"]
+    priority: 0
+    source:
+      title: IRS Revenue Procedure 2023-34, section 2.01
+      doc_no: Rev. Proc. 2023-34
+      url: https://www.irs.gov/pub/irs-drop/rp-23-34.pdf
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [amount]
+    params:
+      brackets:
+        - {max_amount: "23200",   rate: "0.10", quick_deduct: "0"}
+        - {max_amount: "94300",   rate: "0.12", quick_deduct: "464"}
+        - {max_amount: "201050",  rate: "0.22", quick_deduct: "9894"}
+        - {max_amount: "383900",  rate: "0.24", quick_deduct: "13915"}
+        - {max_amount: "487450",  rate: "0.32", quick_deduct: "44627"}
+        - {max_amount: "731200",  rate: "0.35", quick_deduct: "59250.50"}
+        - {                       rate: "0.37", quick_deduct: "73874.50"}
+
+  # ---- 标准扣除额（年度参数，经 param 步骤引用）------------------
+  - id: us/federal/std_deduction_single
+    primitive: flat
+    description: 2024 standard deduction, Single (annual param, not a tax)
+    effective: ["2024-01-01", "2024-12-31"]
+    priority: 0
+    source:
+      title: IRS Revenue Procedure 2023-34, section 2.10
+      doc_no: Rev. Proc. 2023-34
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    notes: ["rate 恒为0：本条目仅为承载年度扣除参数，经管线 param 步骤取 amount。"]
+    params: {rate: "0", amount: "14600"}
+
+  - id: us/federal/std_deduction_mfj
+    primitive: flat
+    description: 2024 standard deduction, Married Filing Jointly
+    effective: ["2024-01-01", "2024-12-31"]
+    priority: 0
+    source:
+      title: IRS Revenue Procedure 2023-34, section 2.10
+      doc_no: Rev. Proc. 2023-34
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0", amount: "29200"}

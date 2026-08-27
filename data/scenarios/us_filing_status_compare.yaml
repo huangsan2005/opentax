@@ -1,0 +1,19 @@
+# 场景：报税身份对比（Same income, Single vs MFJ）
+# 展示美国税制的婚姻惩罚/奖励结构：同收入下两种身份的联邦税差。
+id: us_filing_status_compare
+title: "Filing status comparison at the same income (2024)"
+pipeline: us_federal_iit_single        # 默认管线；轴 case 覆盖为 MFJ
+result_var: federal_income_tax         # 比较税额（枚举器按值降序，见说明）
+axes:
+  - var: filing_status
+    cases:
+      single:
+        label: Single
+      mfj:
+        label: Married Filing Jointly
+        pipeline: us_federal_iit_mfj
+assumptions:
+  - "Same gross wages, no itemized deductions (standard deduction applies)"
+  - "W-2 employment only; FICA excluded from comparison"
+  - "2024 tax year parameters (Rev. Proc. 2023-34)"
+  - "Note: enumerator ranks DESCENDING on federal_income_tax, so rank 1 = higher tax — compare rows, not ranks"

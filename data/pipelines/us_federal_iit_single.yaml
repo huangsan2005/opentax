@@ -1,0 +1,59 @@
+# 管线：美国联邦个税 2024 —— W-2 雇员联邦税负快照（Single）
+# 输入（USD 年度口径）：
+#   gross_wages  工资总额
+#   itemized     分项扣除（可选；未提供或小于标准扣除时自动取标准扣除）
+# 口径：仅联邦普通所得税。FICA（社保6.2%+医保1.45%）为工资税非所得税，
+#       末尾单列供参考，不计入 income tax。2024 工资基数上限未建模（教学口径）。
+id: us_federal_iit_single
+title: US Federal Income Tax 2024 (Single)
+inputs:
+  gross_wages: {"question": "Annual gross wages (USD)?", "required": true}
+steps:
+  - as: std_deduction
+    op: param
+    rule: us/federal/std_deduction_single
+    param: amount
+    desc: 2024 standard deduction (Single)
+
+  - as: itemized
+    op: param_or_input
+    key: itemized
+    default: "0"
+    desc: itemized deduction (0 if not provided)
+
+  - as: deduction
+    op: expr
+    desc: deduction = max(std, itemized)
+    expr: (itemized > std_deduction) * itemized + (itemized <= std_deduction) * std_deduction
+
+  - as: taxable_income
+    op: expr
+    desc: taxable income = wages − deduction（下限0）
+    expr: (gross_wages - deduction > 0) * (gross_wages - deduction)
+
+  - as: federal_income_tax
+    op: rule
+    rule: us/federal/iit_2024_single
+    args: {amount: taxable_income}
+    desc: Federal income tax (Single brackets, Rev. Proc. 2023-34)
+
+  - as: effective_rate_pct
+    op: expr
+    desc: effective rate = tax ÷ wages (%)
+    expr: federal_income_tax / gross_wages * 100
+
+  - as: after_tax_income
+    op: expr
+    result: true
+    desc: after-tax income = wages − federal income tax (excl. FICA)
+    expr: gross_wages - federal_income_tax
+
+  - as: fica_social_security
+    op: expr
+    desc: FICA Social Security 6.2%（2024 基数上限 168,600 未建模）
+    expr: gross_wages * 0.062
+
+  - as: fica_medicare
+    op: expr
+    desc: FICA Medicare 1.45%
+    expr: gross_wages * 0.0145

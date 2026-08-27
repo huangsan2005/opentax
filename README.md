@@ -63,6 +63,7 @@ Note: spreading over 2 or 3 quarters is **useless** — the exemption tests each
 | Annual bonus separate taxation (÷12 bracket, cliff "blind zones" anchored at 36k/144k boundaries, through 2027-12-31) | `lump_bracket` | Caishui [2018] 164 |
 | Tobacco chain: leaf tax 20% / Class-A & B production excise (56%/36% + 0.003/stick) / wholesale excise (11% + 250/carton) | `flat`/`compound` | Tobacco Leaf Tax Law; Caishui [2015] 60 |
 | VAT on goods (17%→16%→13% multi-version, auto-selected by date) | `flat`, multi-version | VAT Regulations; Caishui [2018] 32; Announcement [2019] 39 |
+| **US Federal IIT 2024** — Single & MFJ brackets + standard deductions (second-country sample: data only, zero engine changes) | `progressive` dual-path | IRS Rev. Proc. 2023-34 |
 
 ## Eight Primitives (enough to onboard any country)
 
@@ -110,7 +111,7 @@ Pipeline example (zero hard-coded rates — the levy rate is resolved from the r
 - [x] Cigarette full-chain case (leaf tax → factory compound excise with in-tax back-solving → wholesale levy → VAT credit chain; teaches why cheap packs die on the fixed per-carton levy)
 - [x] China annual-bonus separate taxation (lump_bracket primitive; blind-zone cliffs anchored; policy blank after 2027-12-31 refuses by design)
 - [ ] Six-taxes-two-fees halving supplement pack; per-province local education surcharge versions
-- [ ] **Second-country sample** (US federal income tax table or EU VAT — to prove "data only, no code changes")
+- [x] **Second-country sample: US Federal IIT 2024** (Single/MFJ brackets + standard deductions + filing-status comparison scenario — added as YAML + tests only, proving "data only, no code changes"; 2025 parameters not yet included → out-of-scope refusal until contributed)
 - [ ] LLM orchestration spec: mandatory parameter follow-ups; freshness statement on every output
 
 ## Disclaimer
