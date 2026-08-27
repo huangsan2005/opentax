@@ -33,6 +33,15 @@ class PipelineError(TaxEngineError):
     pass
 
 
+class MissingInputs(PipelineError):
+    """管线 required 输入缺失 -> 携带追问清单抛出（LLM 编排层的协议）。"""
+
+    def __init__(self, questions):
+        self.questions = questions
+        super().__init__("缺少必填参数，需向用户追问:\n" + "\n".join(
+            "- %s" % q for q in questions))
+
+
 # ---- 安全算术求值 -------------------------------------------------
 _ALLOWED_BINOPS = {
     ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
@@ -97,6 +106,12 @@ class PipelineResult(dict):
                 i, s.get("desc") or s["as"],
                 " **<-- 到手**" if s.get("is_result") else "",
                 fmt(s["value"])))
+        notes = [s for s in self.steps if s.get("is_note")]
+        if notes:
+            out.append("")
+            out.append("## ⚠ 警示与提示")
+            for n in notes:
+                out.append("- %s" % n["flag"])
         out.append("")
         out.append("## 依据链")
         out.append("")
@@ -116,6 +131,15 @@ class PipelineResult(dict):
 
 def run_pipeline(pipeline_def, tx_date, inputs, calculator=None):
     """pipeline_def: 已加载的 dict；inputs: {str: 可转Fraction的值}。"""
+    # ---- required 输入校验：缺则抛追问清单，绝不带缺口运行 ----
+    questions = []
+    for key, spec in (pipeline_def.get("inputs") or {}).items():
+        if isinstance(spec, dict) and spec.get("required") \
+                and (key not in inputs or str(inputs[key]).strip() == ""):
+            questions.append(str(spec.get("question") or key))
+    if questions:
+        raise MissingInputs(questions)
+
     res = PipelineResult()
     res.title = pipeline_def.get("title", pipeline_def.get("id"))
     ctx = dict(inputs)
@@ -188,6 +212,18 @@ def _run(pipeline_def, tx_date, ctx, res, calculator):
                 "source": tbl.get("source", {}),
                 "verified_at": tbl.get("last_verified"),
             })
+        elif st.get("op") == "note":
+            # 条件警示（如无票成本催票）；when 不满足时静默跳过
+            if st.get("when") and safe_eval(st["when"], ctx) != 1:
+                continue
+            text = str(st.get("text", "")).format(
+                **{k: fmt(v) for k, v in ctx.items()})
+            res.steps.append({"as": name,
+                              "desc": st.get("desc", name),
+                              "value": F(0),
+                              "is_note": True,
+                              "flag": text,
+                              "text": text})
         else:
             raise PipelineError("未知步骤 op: %r" % st.get("op"))
         # 结果同时写回 求值上下文 与 结果字典（供枚举器读取 owner_net 等）

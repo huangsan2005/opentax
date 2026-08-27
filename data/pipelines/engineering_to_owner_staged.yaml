@@ -1,7 +1,10 @@
 # 管线：工程款 -> 老板到手（开票节奏模型·按季申报口径）
 # 变量：
-#   contract_gross 含税合同额   cost_expense 成本费用合计
+#   contract_gross 含税合同额   cost_expense 成本费用合计（有票）
 #   n_periods 开票所跨的季度数（1=全部集中单季开完；4=四季均匀）
+inputs:
+  contract_gross: {question: 含税合同额是多少（元）？, required: true}
+  cost_expense: {question: 有票据的成本费用合计是多少（元）？, required: true}
 # 现金口径（与快照版一致）：
 #   可分配现金 = 合同额 − 增值税 − 附加 − 成本 − 企税，
 #   全额视同股息缴20%后为"到手"。

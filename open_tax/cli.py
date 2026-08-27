@@ -57,7 +57,7 @@ def main(argv=None):
     sets = _parse_sets(ns.sets)
 
     from open_tax.engine.calculator import Calculator
-    from open_tax.engine.pipeline import run_pipeline
+    from open_tax.engine.pipeline import MissingInputs, run_pipeline
     from open_tax.engine.scenarios import (
         enumerate_scenario,
         load_yaml_defs,
@@ -94,6 +94,11 @@ def main(argv=None):
             print(enumerate_scenario(sdef, pipelines,
                                      ns.date, sets).render())
             return 0
+    except MissingInputs as mi:
+        # 追问协议：缺必填参数 -> 输出问题清单，退出码3（LLM 据此向用户追问）
+        print("[需要追问] 本计算缺少必要参数，请先回答：\n"
+              + "\n".join("- %s" % q for q in mi.questions))
+        return 3
     except Exception as e:                      # noqa: BLE001
         print("[拒答/错误] %s" % e, file=sys.stderr)
         return 1

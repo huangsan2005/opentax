@@ -1,15 +1,41 @@
 # 管线：工程款（含税合同额）-> 老板到手，单期快照
 # 适用：小规模纳税人施工企业、查账征收、市区办公。
-# 口径（重要）：
-#   - contract_gross 含税合同额；cost_expense 成本费用合计（用户提供）。
-#   - 企业所得税按账面口径：不含税收入 − 成本 − 税金及附加。
-#   - 分红按"期末全额清仓"教学假设：可分配现金全额视同股息，
-#     缴20%后即"到手"；免征增值税多出的现金因此在表中可见
-#     （体现在 distributable 与账面利润之差）。
-#   - 全部税率运行期从规则库按交易日期解析，本文件无硬编码税率。
+#
+# 参数清单（LLM 编排层追问协议）：
+#   缺 required 参数时 CLI 返回退出码3并列出问题文本，禁止带着缺口运行。
+#   cost_invoiced  有有效票据（发票）的成本 -> 企税前全额扣除
+#   cost_uninvoiced 无票成本 -> 企税前不得扣除（28号公告），等额抬高应纳税所得额；
+#                   但它仍是真实现金支出，现金流侧全额扣减。
+#
+# 口径说明：
+#   - 增值税（小规模）= 征收率×销售额，与成本无关；成本票据只影响企税。
+#     一般纳税人"销项−进项"管线见路线图（进项必须专票，追问协议在彼处更关键）。
+#   - 分红按"期末全额清仓"教学假设。
 id: engineering_to_owner
 title: 工程款到老板手（小规模纳税人·快照口径）
+inputs:
+  contract_gross:
+    question: 含税合同额是多少（元）？
+    required: true
+  cost_invoiced:
+    question: 有有效票据（发票）的成本费用合计是多少（元）？
+    required: true
+  cost_uninvoiced:
+    question: 暂无票据的成本合计是多少（元）？（尽快补票，最迟次年5月31日汇算清缴前取得仍可扣除）
+    required: false
 steps:
+  # ---- 无票成本默认0 ------------------------------------------
+  - as: cost_uninvoiced
+    op: param_or_input
+    key: cost_uninvoiced
+    default: "0"
+    desc: 无票成本（未提供时按0）
+
+  - as: cost_total
+    op: expr
+    desc: 成本总额（现金口径 = 有票 + 无票）
+    expr: cost_invoiced + cost_uninvoiced
+
   # ---- 增值税环节 ---------------------------------------------
   - as: levy_rate
     op: param                      # 运行期解析：2023-2027 减按1%，否则3%
@@ -18,13 +44,13 @@ steps:
     desc: 小规模纳税人现行征收率
 
   - as: vat_excl_revenue
-    op: expr                       # 价税分离：不含税收入 = 含税/(1+率)
+    op: expr
     desc: 不含税收入 = 合同额÷(1+征收率)
     expr: contract_gross / (1 + levy_rate)
 
   - as: vat_payable
     op: expr
-    desc: 增值税 = 不含税收入×征收率
+    desc: 增值税 = 不含税收入×征收率（与成本无关）
     expr: vat_excl_revenue * levy_rate
 
   # ---- 附加税费（随实缴增值税走）-------------------------------
@@ -51,11 +77,11 @@ steps:
     desc: 税金及附加合计
     expr: urban_tax + edu_sur + local_edu
 
-  # ---- 企业所得税（账面口径）-----------------------------------
+  # ---- 企业所得税（票据状态在此分流）---------------------------
   - as: cit_taxable
     op: expr
-    desc: 应纳税所得额 = 不含税收入 − 成本 − 税金及附加
-    expr: vat_excl_revenue - cost_expense - surcharge_total
+    desc: 应纳税所得额 = 不含税收入 − 有票成本 − 税金及附加（无票成本不得扣除）
+    expr: vat_excl_revenue - cost_invoiced - surcharge_total
 
   - as: cit_payable
     op: rule
@@ -63,11 +89,18 @@ steps:
     args: {base: cit_taxable}
     desc: 企业所得税（小微断崖：≤300万实际5%，超300万全额25%）
 
+  - as: uninvoiced_notice
+    op: note
+    when: cost_uninvoiced > 0
+    desc: 票据警示
+    text: "无票成本 {cost_uninvoiced} 元不得税前扣除（国家税务总局公告2018年第28号），已等额抬高应纳税所得额；请尽快收集有效票据——最迟次年5月31日汇算清缴前取得仍可扣除。"
+    flag: "存在无票成本 {cost_uninvoiced} 元，尽快收集有效票据（汇算清缴前取得仍可扣除）"
+
   # ---- 现金流与分红 --------------------------------------------
   - as: distributable
     op: expr
-    desc: 可分配现金 = 合同额 − 增值税 − 附加 − 成本 − 企税
-    expr: contract_gross - vat_payable - surcharge_total - cost_expense - cit_payable
+    desc: 可分配现金 = 合同额 − 增值税 − 附加 − 成本总额 − 企税
+    expr: contract_gross - vat_payable - surcharge_total - cost_total - cit_payable
 
   - as: dividend_tax
     op: rule
