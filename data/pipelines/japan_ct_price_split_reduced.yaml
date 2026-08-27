@@ -1,0 +1,28 @@
+id: japan_ct_price_split_reduced
+title: "Japan consumption tax price decomposition - reduced 8 pct"
+# 管线：日本消费税价税分解（軽減税率 8%，食品外带/报纸）
+# 2019-10-01 前引用本管线将直接拒答（当时不存在軽減税率）。
+inputs:
+  gross_price: {"question": "税込価格（円）？", "required": true}
+steps:
+  - as: ct_rate
+    op: param
+    rule: jp/consumption_tax/reduced_food
+    param: rate
+    desc: 軽減税率 8%（2019-10 起）
+
+  - as: net_price
+    op: expr
+    desc: "税抜 = 税込 ÷ (1+率)"
+    expr: gross_price / (1 + ct_rate)
+
+  - as: ct_amount
+    op: expr
+    desc: "消費税額 = 税込 − 税抜"
+    expr: gross_price - net_price
+
+  - as: ct_share_pct
+    op: expr
+    result: true
+    desc: "价格中消费税占比（%）"
+    expr: ct_amount / gross_price * 100

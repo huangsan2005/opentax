@@ -65,6 +65,7 @@ Note: spreading over 2 or 3 quarters is **useless** — the exemption tests each
 | VAT on goods (17%→16%→13% multi-version, auto-selected by date) | `flat`, multi-version | VAT Regulations; Caishui [2018] 32; Announcement [2019] 39 |
 | **US Federal IIT 2024** — Single & MFJ brackets + standard deductions (second-country sample: data only, zero engine changes) | `progressive` dual-path | IRS Rev. Proc. 2023-34 |
 | **EU VAT** — 7 member states' standard rates (DE 19 / FR 20 / NL-ES 21 / IT 22 / PL 23 / SE 25) + reduced samples, per-country rule ids with national legal sources; cross-country price-decomposition scenario | `flat` | national statutes (UStG, CGI, DPR 633/72, Wet OB, Ley 37/92, Ustawa o VAT, ML 1994:200) |
+| **Japan Consumption Tax** — one rule id, four historical versions on the time axis (3%→5%→8%→10%), auto-selected by transaction date; reduced 8% rate (food takeout/newspapers, since 2019-10); eat-in vs takeout comparison scenario | `flat`, 4-version timeline | 消費税法（昭和63年法律第108号）and partial amendments |
 
 ## Eight Primitives (enough to onboard any country)
 
@@ -114,6 +115,7 @@ Pipeline example (zero hard-coded rates — the levy rate is resolved from the r
 - [ ] Six-taxes-two-fees halving supplement pack; per-province local education surcharge versions
 - [x] **Second-country sample: US Federal IIT 2024** (Single/MFJ brackets + standard deductions + filing-status comparison scenario — added as YAML + tests only, proving "data only, no code changes"; 2025 parameters not yet included → out-of-scope refusal until contributed)
 - [x] **EU VAT sample** — one jurisdiction, many countries: 7 member states' standard rates as independent rule ids with national legal citations; the price-decomposition scenario shows the same €100 price tag carries 15.97% (DE) to 20% (SE) VAT share
+- [x] **Japan consumption tax sample** — the mirror image of EU: one rule id carrying four historical rate versions (3%→5%→8%→10%) on the time axis; the same pipeline walks 1989/1997/2014/2019 tax regimes by just changing the date; eat-in 10% vs takeout 8% scenario (the "eat-in war")
 - [ ] LLM orchestration spec: mandatory parameter follow-ups; freshness statement on every output
 
 ## Disclaimer

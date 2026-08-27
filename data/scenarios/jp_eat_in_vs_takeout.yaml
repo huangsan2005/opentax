@@ -1,0 +1,20 @@
+# 场景：同一份弁当，堂食（标准10%）与外带（軽減8%）的税负对比
+# 现实背景：2019-10 起日本"イートイン戦争"——同一商品因场所不同税率不同。
+id: jp_eat_in_vs_takeout
+title: "Same bento, eat-in (10%) vs takeout (8%)"
+pipeline: japan_ct_price_split
+result_var: ct_share_pct
+axes:
+  - var: service
+    cases:
+      eat_in:
+        label: "堂食 標準10%"
+        pipeline: japan_ct_price_split
+      takeout:
+        label: "外带 軽減8%"
+        pipeline: japan_ct_price_split_reduced
+assumptions:
+  - "Same gross price, same product (bento)"
+  - "Eat-in = standard 10%; takeout/delivery = reduced 8% (2019-10 rules)"
+  - "Classification (eat-in vs takeout) is a business fact supplied by the caller"
+  - "Note: ranks DESCENDING on tax share — rank 1 = eat-in (higher)"

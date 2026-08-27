@@ -1,0 +1,30 @@
+id: japan_ct_price_split
+title: "Japan consumption tax price decomposition - standard rate"
+# 管线：日本消费税价税分解（标准税率）
+# 唯一要点：税率由交易日期从四个历史版本中自动选取——
+# 同一条管线，改 --date 即可在 1989/1997/2014/2019 四个税制时空间穿梭。
+# JP 消费税为价内税（標価格は税込）：税 = 含税÷(1+率)×率。
+inputs:
+  gross_price: {"question": "税込価格（円）？", "required": true}
+steps:
+  - as: ct_rate
+    op: param
+    rule: jp/consumption_tax/standard
+    param: rate
+    desc: 標準税率（交易日自动选版：3/5/8/10%）
+
+  - as: net_price
+    op: expr
+    desc: "税抜 = 税込 ÷ (1+率)"
+    expr: gross_price / (1 + ct_rate)
+
+  - as: ct_amount
+    op: expr
+    desc: "消費税額 = 税込 − 税抜"
+    expr: gross_price - net_price
+
+  - as: ct_share_pct
+    op: expr
+    result: true
+    desc: "价格中消费税占比（%）"
+    expr: ct_amount / gross_price * 100

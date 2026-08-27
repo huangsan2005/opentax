@@ -1,0 +1,86 @@
+# 日本消费税（消費税）—— 第四国样本（时间维度极致：同 id 四个历史版本）
+#
+# 结构说明：
+#   - 单一国家单一税种，同一 rule id "jp/consumption_tax/standard" 下
+#     挂 1989 年以来的全部四个税率版本，交易日期自动选版：
+#       3%（1989-04 起）→ 5%（1997-04）→ 8%（2014-04）→ 10%（2019-10 起）
+#   - 与 EU 样本互为镜像：EU 演示"空间轴"（每国独立 id），
+#     日本演示"时间轴"（同 id 按 effective 拆版本）。
+#   - 2019-10 起另有軽減税率 8%（食品外带/非酒精饮料/报纸），独立 id。
+#   - 法源：消費税法（昭和63年法律第108号）及历次部分改正。
+meta:
+  jurisdiction: jp
+  category: Consumption Tax (Shohizei)
+
+tables:
+  # ---- 标准税率：四个历史版本，同 id 共存 ------------------------
+  - id: jp/consumption_tax/standard
+    primitive: flat
+    description: 消費税 3%（導入期）
+    effective: ["1989-04-01", "1997-03-31"]
+    priority: 0
+    source:
+      title: 消費税法（昭和63年法律第108号）制定時税率
+      doc_no: 昭和63年法律第108号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.03"}
+
+  - id: jp/consumption_tax/standard
+    primitive: flat
+    description: 消費税 5%（1997年4月引き上げ）
+    effective: ["1997-04-01", "2014-03-31"]
+    priority: 0
+    source:
+      title: 消費税法 一部改正（税率5%へ）
+      doc_no: 平成6年法律第46号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.05"}
+
+  - id: jp/consumption_tax/standard
+    primitive: flat
+    description: 消費税 8%（2014年4月引き上げ）
+    effective: ["2014-04-01", "2019-09-30"]
+    priority: 0
+    source:
+      title: 消費税法の一部を改正する法律（三党合意、8%先行）
+      doc_no: 平成24年法律第68号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    params: {rate: "0.08"}
+
+  - id: jp/consumption_tax/standard
+    primitive: flat
+    description: 消費税 標準税率 10%（2019年10月、軽減税率と同時施行）
+    effective: ["2019-10-01", null]
+    priority: 0
+    source:
+      title: 消費税法の一部を改正する法律（10%へ、軽減税率8%創設）
+      doc_no: 平成28年法律第101号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - インボイス制度（2023-10）は適格請求書の保存義務であり税率ではない——本表対象外。
+
+    params: {rate: "0.10"}
+
+  # ---- 軽減税率 8%（食品・新聞）---------------------------------
+  - id: jp/consumption_tax/reduced_food
+    primitive: flat
+    description: 軽減税率 8%（飲食料品の外带・非酒精饮料・定期購読新聞）
+    effective: ["2019-10-01", null]
+    priority: 0
+    source:
+      title: 消費税法の一部を改正する法律（軽減税率創設）
+      doc_no: 平成28年法律第101号
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - 酒類・外食（イートイン）は標準税率10%——区分判定属业务规则，不在税率表。
+    params: {rate: "0.08"}
