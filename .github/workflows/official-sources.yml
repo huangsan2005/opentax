@@ -1,0 +1,22 @@
+name: official-sources
+
+# 官方来源对账：IRS Tax Table PDF vs 引擎（数据即锚点的持续验证）
+on:
+  push:
+    paths:
+      - "data/rules/us/**"
+      - "scripts/check_official_sources.py"
+  workflow_dispatch:
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install pymupdf
+      - name: Reconcile with IRS Tax Table
+        run: python scripts/check_official_sources.py

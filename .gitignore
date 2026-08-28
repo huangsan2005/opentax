@@ -6,3 +6,4 @@ venv/
 Thumbs.db
 *.egg-info/
 .pytest_cache/
+.tmp_verify/

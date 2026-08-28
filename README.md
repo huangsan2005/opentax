@@ -73,6 +73,22 @@ Note: spreading over 2 or 3 quarters is **useless** — the exemption tests each
 
 Plus a price-split helper `price_split(gross_incl_tax, rate)`.
 
+### Reconciling against official published examples
+
+```bash
+pip install pymupdf
+python scripts/check_official_sources.py            # uses cached IRS PDF
+python scripts/check_official_sources.py --refresh  # re-download from irs.gov
+```
+
+The script downloads the **official IRS 2024 Tax Table** and reconciles
+engine output cell-by-cell. Fun fact it documents: the IRS table taxes
+the **midpoint** of each $50 bracket and rounds half-up — which is why
+the table says $13,847 where the exact formula gives $13,841. Both are
+correct; the script bridges the conventions. Same pattern applies to
+other jurisdictions' official examples (CN filing-instruction examples,
+JP national tax agency booklets, EU Commission rate publications).
+
 ## Architecture
 
 ```

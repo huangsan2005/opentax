@@ -69,6 +69,19 @@ python -m open_tax enumerate --scenario withdrawal_strategy \
 
 再加价税分离工具 `price_split(含税价, 率)`。
 
+### 与官方出版物对账
+
+```bash
+pip install pymupdf
+python scripts/check_official_sources.py            # 使用本地缓存的 IRS PDF
+python scripts/check_official_sources.py --refresh  # 从 irs.gov 重新下载
+```
+
+脚本下载 **IRS 官方 2024 Tax Table** 并逐格与引擎对账。附赠一个有趣发现：
+IRS 税表按每 50 美元区间的**中点**计税再半元进位——所以查表是 13,847，
+精确公式算出 13,841。两者都对，脚本负责桥接口径。同样模式适用于其他
+辖区的官方算例（中国申报表填表说明例题、日本国税厅小册子、欧盟委员会税率出版物）。
+
 ## 架构
 
 ```
