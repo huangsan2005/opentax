@@ -130,7 +130,9 @@ Pipeline example (zero hard-coded rates — the levy rate is resolved from the r
 - [x] China annual-bonus separate taxation (lump_bracket primitive; blind-zone cliffs anchored; policy blank after 2027-12-31 refuses by design)
 - [ ] Six-taxes-two-fees halving supplement pack; per-province local education surcharge versions
 - [x] **Three new taxes (2026-08-28, sourced from the STA legal database primary texts)**: vehicle purchase tax 10% (statute-level), deed tax 3–5% range floor, property tax ad valorem 1.2% / rental 12% — PRC catalog coverage now **11 of 18**
-- [ ] **PRC catalog coverage: 11 of 18 statutory taxes** (consumption tax & stamp duty still partial). Remaining gap priorities: full stamp-duty catalog (13 items), vehicle & vessel tax (per-unit schedule), urban land use tax (city-tiered per-sqm), deed-tax provincial versions & home-purchase relief, remaining consumption-tax items; customs/resource/environment taxes last.
+- [x] **产权转移书据入库**（印花税法附表：土地出让/房屋/股权转让 万分之五，商标/著作权/专利 万分之三——山西省税务局官方问答页逐字引用附表核验；法条第五条"计税依据不含列明增值税"入 notes）
+- [x] **车船税乘用车7档入库**（车船税法2012-01-01施行，法定区间全国统一；具体税额省定——北京标准从北京市税务局官方附件doc解析核验：300/420/480/900/1920/3480/5280 元每档；其他省按同id多版本补充）
+- [ ] **PRC catalog coverage: 12.5 of 18 statutory taxes**（消费税部分、印花税 3/13 税目）。剩余缺口优先级：印花税其余 11 目（买卖/借款/租赁/运输/技术/保管/仓储/财险/营业账簿/证券交易）、城镇土地使用税（城市分级定额）、契税省级版本与个人购房优惠、消费税其余税目；关税/资源税/环保税最后。
 - [x] **Second-country sample: US Federal IIT 2024** (Single/MFJ brackets + standard deductions + filing-status comparison scenario — added as YAML + tests only, proving "data only, no code changes"; 2025 parameters not yet included → out-of-scope refusal until contributed)
 - [x] **EU VAT sample** — one jurisdiction, many countries: 7 member states' standard rates as independent rule ids with national legal citations; the price-decomposition scenario shows the same €100 price tag carries 15.97% (DE) to 20% (SE) VAT share
 - [x] **Japan consumption tax sample** — the mirror image of EU: one rule id carrying four historical rate versions (3%→5%→8%→10%) on the time axis; the same pipeline walks 1989/1997/2014/2019 tax regimes by just changing the date; eat-in 10% vs takeout 8% scenario (the "eat-in war")

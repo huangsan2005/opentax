@@ -1,0 +1,169 @@
+# 印花税（产权转移书据）+ 车船税 —— 2026-08-29 官方来源核验入库
+#
+# 印花税法：fgk.chinatax.gov.cn/zcfgk/c100009/c5193058（2022-07-01施行）
+#   正文核验：第五条计税依据四款、第九条未分别列明金额从高适用税率、
+#   第二十条施行日。附表《税目税率表》为PPT附件（库内URL 404，不可机读）。
+#   产权转移书据各族税率经山西省税务局官方问答页逐字引用附表核验：
+#   shanxi.chinatax.gov.cn/web/detail/sx-11400-548-1784100
+#   —— 土地使用权出让/房屋转让/股权转让书据：万分之五
+#   —— 商标/著作权/专利/专有技术使用权转让书据：万分之三
+#
+# 车船税法：fgk.chinatax.gov.cn/zcfgk/c100009/c5193039（2012-01-01施行）
+#   法条只定税额幅度，具体税额省定。乘用车7档法定区间为全国统一，
+#   各档具体金额取 北京市车辆车船税税目税额表（北京市税务局附件doc
+#   已解析核验）。其他省金额不同，请按同id多版本/独立id补充。
+meta:
+  jurisdiction: cn
+  category: 财产和行为税
+
+tables:
+  # ---- 印花税·产权转移书据（印花税法附表）-----------------------
+  - id: cn/stamp/property_transfer_land_house_equity
+    primitive: flat
+    description: 产权转移书据（土地出让/房屋转让/股权转让书据）万分之五
+    effective: ["2022-07-01", null]
+    priority: 0
+    source:
+      title: 印花税法附表《印花税税目税率表》（经山西省税务局官方问答页逐字引用核验）
+      doc_no: 主席令2021年第八十九号
+      url: http://shanxi.chinatax.gov.cn/web/detail/sx-11400-548-1784100
+    last_verified: "2026-08-29"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - "计税依据=书据所列金额，不包括列明的增值税税款（印花税法第五条第二款）"
+      - "股权转让书据不包括应缴纳证券交易印花税的（证券交易单列税目，本表未含）"
+      - "附表PPT在法规库不可机读——各族税率以税务局官方引文+社区复核为准"
+    params: {rate: "0.0005"}
+
+  - id: cn/stamp/property_transfer_ip
+    primitive: flat
+    description: 产权转移书据（商标专用权/著作权/专利权/专有技术使用权转让）万分之三
+    effective: ["2022-07-01", null]
+    priority: 0
+    source:
+      title: 印花税法附表《印花税税目税率表》（山西省税务局官方问答页引用）
+      doc_no: 主席令2021年第八十九号
+      url: http://shanxi.chinatax.gov.cn/web/detail/sx-11400-548-1784100
+    last_verified: "2026-08-29"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - "同上：计税依据不含列明增值税税款"
+    params: {rate: "0.0003"}
+
+  # ---- 车船税·乘用车（法定7档区间，示例税额=北京市标准）----------
+  # 法条：排气量区间全国统一；每档"年基准税额"省定（北京档如下）。
+  # 结构：每档一条id，amount=年基准税额（元/辆·年），便于管线引用；
+  # 其他省份请按同id+priority或独立id补充本地版本。
+  - id: cn/vvt/passenger_1L_below
+    primitive: flat
+    description: 乘用车≤1.0升 年基准税额（北京300元/辆）
+    effective: ["2012-01-01", null]
+    priority: 0
+    country_province: BJ
+    source:
+      title: 车船税法附表《车船税税目税额表》+北京市车辆车船税税目税额表（北京市税务局附件doc核验）
+      doc_no: 主席令2011年第四十三号（2019修正）
+      url: http://beijing.chinatax.gov.cn/bjswj/sszc/zxwj/202012/6428ced78d4b44bf819d2fa329470a32/files/93b73bfc856b4b68abccbc9bb3659fe3.doc
+    last_verified: "2026-08-29"
+    verified_by: null
+    inputs: [base]
+    notes: ["区间：1.0升（含）以下；法定幅度60-360元，北京取300元"]
+    params: {rate: "1", amount: "300"}
+
+  - id: cn/vvt/passenger_1L_1p6
+    primitive: flat
+    description: 乘用车1.0-1.6升（含） 年基准税额（北京420元/辆）
+    effective: ["2012-01-01", null]
+    priority: 0
+    country_province: BJ
+    source:
+      title: 同 cn/vvt/passenger_1L_below
+      doc_no: 主席令2011年第四十三号（2019修正）
+      url: http://beijing.chinatax.gov.cn/bjswj/sszc/zxwj/202012/6428ced78d4b44bf819d2fa329470a32/files/93b73bfc856b4b68abccbc9bb3659fe3.doc
+    last_verified: "2026-08-29"
+    verified_by: null
+    inputs: [base]
+    notes: ["法定幅度300-540元，北京420元（1.6升及以下家用车主流档）"]
+    params: {rate: "1", amount: "420"}
+
+  - id: cn/vvt/passenger_1p6_2L
+    primitive: flat
+    description: 乘用车1.6-2.0升（含） 年基准税额（北京480元/辆）
+    effective: ["2012-01-01", null]
+    priority: 0
+    country_province: BJ
+    source:
+      title: 同 cn/vvt/passenger_1L_below
+      doc_no: 主席令2011年第四十三号（2019修正）
+      url: http://beijing.chinatax.gov.cn/bjswj/sszc/zxwj/202012/6428ced78d4b44bf819d2fa329470a32/files/93b73bfc856b4b68abccbc9bb3659fe3.doc
+    last_verified: "2026-08-29"
+    verified_by: null
+    inputs: [base]
+    notes: ["法定幅度360-660元，北京480元"]
+    params: {rate: "1", amount: "480"}
+
+  - id: cn/vvt/passenger_2L_2p5
+    primitive: flat
+    description: 乘用车2.0-2.5升（含） 年基准税额（北京900元/辆）
+    effective: ["2012-01-01", null]
+    priority: 0
+    country_province: BJ
+    source:
+      title: 同 cn/vvt/passenger_1L_below
+      doc_no: 主席令2011年第四十三号（2019修正）
+      url: http://beijing.chinatax.gov.cn/bjswj/sszc/zxwj/202012/6428ced78d4b44bf819d2fa329470a32/files/93b73bfc856b4b68abccbc9bb3659fe3.doc
+    last_verified: "2026-08-29"
+    verified_by: null
+    inputs: [base]
+    notes: ["法定幅度660-1200元，北京900元"]
+    params: {rate: "1", amount: "900"}
+
+  - id: cn/vvt/passenger_2p5_3L
+    primitive: flat
+    description: 乘用车2.5-3.0升（含） 年基准税额（北京1920元/辆）
+    effective: ["2012-01-01", null]
+    priority: 0
+    country_province: BJ
+    source:
+      title: 同 cn/vvt/passenger_1L_below
+      doc_no: 主席令2011年第四十三号（2019修正）
+      url: http://beijing.chinatax.gov.cn/bjswj/sszc/zxwj/202012/6428ced78d4b44bf819d2fa329470a32/files/93b73bfc856b4b68abccbc9bb3659fe3.doc
+    last_verified: "2026-08-29"
+    verified_by: null
+    inputs: [base]
+    notes: ["法定幅度1200-2400元，北京1920元"]
+    params: {rate: "1", amount: "1920"}
+
+  - id: cn/vvt/passenger_3L_4L
+    primitive: flat
+    description: 乘用车3.0-4.0升（含） 年基准税额（北京3480元/辆）
+    effective: ["2012-01-01", null]
+    priority: 0
+    country_province: BJ
+    source:
+      title: 同 cn/vvt/passenger_1L_below
+      doc_no: 主席令2011年第四十三号（2019修正）
+      url: http://beijing.chinatax.gov.cn/bjswj/sszc/zxwj/202012/6428ced78d4b44bf819d2fa329470a32/files/93b73bfc856b4b68abccbc9bb3659fe3.doc
+    last_verified: "2026-08-29"
+    verified_by: null
+    inputs: [base]
+    notes: ["法定幅度2400-3600元，北京3480元"]
+    params: {rate: "1", amount: "3480"}
+
+  - id: cn/vvt/passenger_4L_above
+    primitive: flat
+    description: 乘用车4.0升以上 年基准税额（北京5280元/辆）
+    effective: ["2012-01-01", null]
+    priority: 0
+    country_province: BJ
+    source:
+      title: 同 cn/vvt/passenger_1L_below
+      doc_no: 主席令2011年第四十三号（2019修正）
+      url: http://beijing.chinatax.gov.cn/bjswj/sszc/zxwj/202012/6428ced78d4b44bf819d2fa329470a32/files/93b73bfc856b4b68abccbc9bb3659fe3.doc
+    last_verified: "2026-08-29"
+    verified_by: null
+    inputs: [base]
+    notes: ["法定幅度3600-5400元，北京5280元"]
+    params: {rate: "1", amount: "5280"}
