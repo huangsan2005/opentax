@@ -1,0 +1,82 @@
+# 车辆购置税 + 契税 + 房产税（2026-08-28 从官方法规库核验入库）
+# 来源：国家税务总局政策法规库（fgk.chinatax.gov.cn）一手全文。
+# 每条注明库内 URL 供社区复核。
+meta:
+  jurisdiction: cn
+  category: 财产和行为税
+
+tables:
+  # ---- 车辆购置税法（主席令2018年第十九号）----------------------
+  - id: cn/vpt/base
+    primitive: flat
+    description: 车辆购置税 10%（一次性征收；计税价格为不含增值税价款）
+    effective: ["2019-07-01", null]
+    priority: 0
+    source:
+      title: 中华人民共和国车辆购置税法（2018-12-29通过，2019-07-01施行，同时废止2000年暂行条例）
+      doc_no: 主席令2018年第十九号
+      url: https://fgk.chinatax.gov.cn/zcfgk/c100009/c5193038/content.html
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - "第四条：税率为10%；第五条：应纳税额=计税价格×税率"
+      - "第六条（一）：购买自用的计税价格=实际支付给销售者的全部价款，不包括增值税税款"
+    params: {rate: "0.10"}
+
+  # ---- 契税法（主席令2020年第五十二号）--------------------------
+  - id: cn/deed_tax/base
+    primitive: flat
+    description: 契税法定幅度 3%-5%（具体适用税率由省级人大决定——地区差异样本）
+    effective: ["2021-09-01", null]
+    priority: 0
+    source:
+      title: 中华人民共和国契税法（2020-08-11通过，2021-09-01施行，同时废止1997年暂行条例）
+      doc_no: 主席令2020年第五十二号
+      url: https://fgk.chinatax.gov.cn/zcfgk/c100009/c5193053/content.html
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - "第三条：税率为3%-5%，省级人大在幅度内决定并报备案——引擎本条目存法定幅度下限3%，省级版本请按同id多版本/独立id补充（如湖南4%等）"
+      - "第六条免征：夫妻更名、法定继承等情形属业务判定，不入税率表"
+      - 个人购房 1%-2% 优惠属财政部/税务总局阶段性公告，待补独立条目
+    params: {rate: "0.03"}
+
+  # ---- 房产税暂行条例（国发[1986]90号，2011修订版）--------------
+  # 从价计征 = 原值×(1-减除比例)×1.2%，减除比例省定(10%-30%)。
+  # 引擎拆两层：规则层只承载 1.2% 税率；"余值"计算在管线/调用方完成
+  # （原语 flat 只认 base，避免把省定比例硬编码进规则库）。
+  - id: cn/property_tax/ad_valorem
+    primitive: flat
+    description: 房产税从价税率 1.2%（计税基础=原值一次减除10%-30%后的余值，由调用方算好传入）
+    effective: ["1986-10-01", null]
+    priority: 0
+    source:
+      title: 中华人民共和国房产税暂行条例（国发[1986]90号发布；2011-01-08国务院令第588号修订）
+      doc_no: 国发[1986]90号
+      url: https://fgk.chinatax.gov.cn/zcfgk/c100010/c5196866/content.html
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - "第三条：余值=原值×(1-减除比例)，减除10%~30%由省级政府定（多数省30%）——调用方先算余值再引用本规则"
+      - "个人自住住房非经营性免征由各省条例细则规定，不入本表"
+    params: {rate: "0.012"}
+
+  - id: cn/property_tax/rental
+    primitive: flat
+    description: 房产税从租：按租金收入的12%
+    effective: ["1986-10-01", null]
+    priority: 0
+    source:
+      title: 中华人民共和国房产税暂行条例（国发[1986]90号；2011修订）
+      doc_no: 国发[1986]90号
+      url: https://fgk.chinatax.gov.cn/zcfgk/c100010/c5196866/content.html
+    last_verified: "2026-08-28"
+    verified_by: null
+    inputs: [base]
+    notes:
+      - "第四条：依照房产租金收入计算缴纳的，税率为12%"
+      - "个人出租住房优惠 4%（财税〔2008〕24号）待补独立条目"
+    params: {rate: "0.12"}
